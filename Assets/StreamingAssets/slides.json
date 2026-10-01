@@ -1,0 +1,47 @@
+{
+  "slides": [
+    {
+      "big": "情報システムコース",
+      "lines": ["コースガイダンス 2026"],
+      "blocks": ["情報システム", "コース2026"],
+      "blocksOnJump": true
+    },
+    {
+      "title": "システムとは",
+      "lines": ["構成要素すべてが一体となって機能する仕組み"],
+      "machine": true
+    },
+    {
+      "title": "いま動いているのもシステム",
+      "stand": [
+        { "icon": "sensor", "label": "センサー（mocopi）" },
+        { "icon": "receiver", "label": "レシーバー" },
+        { "icon": "pc", "label": "PC（mocopi アプリ → Unity）" },
+        { "icon": "avatar", "label": "3Dアバター" },
+        { "icon": "projector", "label": "プロジェクター" }
+      ],
+      "note": "ひとつでも欠けると動かない"
+    },
+    {
+      "title": "何を学ぶか",
+      "rain": [
+        "C", "C#", "JavaScript", "SQL", "PHP", "Processing", "Pure Data", "Python", "Java", "Swift", "VBA",
+        "AI", "機械学習", "LLM", "ChatGPT", "Claude Code",
+        "Web", "アプリ", "Node.js", "React", "TypeScript",
+        "データサイエンス", "データベース", "表計算",
+        "ゲーム", "Unity", "3DCG", "VR", "AR", "アルゴリズム", "プログラミング", "情報処理", "RPA"
+      ]
+    },
+    {
+      "title": "コーディングエージェントと開発",
+      "agents": 4,
+      "troubles": ["バグ", "エラー", "フリーズ", "クラッシュ", "404", "null", "仕様変更", "締切"]
+    },
+    {
+      "title": "続きはゲームで",
+      "big": "情報システム・クエスト",
+      "lines": ["スマホで遊べます"],
+      "guide": true
+    }
+  ]
+}
