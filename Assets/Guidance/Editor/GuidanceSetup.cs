@@ -76,8 +76,13 @@ namespace Guidance.EditorTools
         public static void CreateScene()
         {
             Directory.CreateDirectory(Path.GetDirectoryName(ScenePath));
-            AssetDatabase.DeleteAsset(ScenePath);
-            if (!AssetDatabase.CopyAsset(SampleScenePath, ScenePath))
+            // サンプルシーンの中身で上書きする。ファイルごと作り直さないので、シーンの識別子（.meta）は変わらない
+            if (File.Exists(ScenePath))
+            {
+                File.Copy(SampleScenePath, ScenePath, true);
+                AssetDatabase.ImportAsset(ScenePath, ImportAssetOptions.ForceUpdate);
+            }
+            else if (!AssetDatabase.CopyAsset(SampleScenePath, ScenePath))
             {
                 throw new IOException("サンプルシーンをコピーできません: " + SampleScenePath);
             }
