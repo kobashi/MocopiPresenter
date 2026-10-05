@@ -266,6 +266,135 @@ namespace Guidance.EditorTools
             return body;
         }
 
+        /// <summary>
+        /// VR 体験会（vr-experience）の場面3〜8の仕掛けを順に動かす。
+        /// アバターの体ごと向きを変えて頭の向きの代わりにし、手の骨を動かして手を上げる身ぶりの代わりにする。
+        /// </summary>
+        public static void Vr()
+        {
+            SlideDeck deck = null;
+            Transform avatar = null;
+            Animator animator = null;
+            T Find<T>() where T : UnityEngine.Object => UnityEngine.Object.FindFirstObjectByType<T>(FindObjectsInactive.Include);
+            void Turn(float yaw) => avatar.rotation = Quaternion.Euler(0f, yaw, 0f);
+            void HandsUp(bool both)
+            {
+                Transform head = animator.GetBoneTransform(HumanBodyBones.Head);
+                animator.GetBoneTransform(HumanBodyBones.RightHand).position = head.position + Vector3.up * 0.3f + Vector3.right * 0.2f;
+                if (both)
+                {
+                    animator.GetBoneTransform(HumanBodyBones.LeftHand).position = head.position + Vector3.up * 0.3f - Vector3.right * 0.2f;
+                }
+            }
+
+            At(0.5f, () =>
+            {
+                Find<PresentationMenu>().Switch("vr-experience");
+                deck = Find<SlideDeck>();
+                animator = Find<Mocopi.Receiver.MocopiAvatar>().GetComponent<Animator>();
+                avatar = animator.transform;
+            });
+
+            // 場面3：頭を回すとゴーグルの景色が変わる
+            At(1.0f, () => deck.Show(2));
+            At(2.0f, () => { Shot("vr-3-headset-front"); Eyes("vr-3"); });
+            At(2.1f, () => Turn(70f));
+            At(3.5f, () => { Shot("vr-3-headset-turned"); Eyes("vr-3-turned"); Console.WriteLine("PLAYTEST headset turn=" + Find<HeadsetView>().HeadTurn.eulerAngles); });
+            At(3.6f, () => Turn(0f));
+
+            // 場面4：カメラを増やすと座標の分かる点が増える
+            At(4.0f, () => deck.Show(3));
+            for (int n = 1; n <= 4; n++)
+            {
+                int count = n;
+                At(4.5f + n * 0.6f, () =>
+                {
+                    OutsideInTracking tracking = Find<OutsideInTracking>();
+                    tracking.SetCameras(count);
+                });
+                At(4.9f + n * 0.6f, () =>
+                {
+                    OutsideInTracking tracking = Find<OutsideInTracking>();
+                    Console.WriteLine("PLAYTEST tracking cameras=" + tracking.ActiveCameras + " located=" + tracking.Located + "/" + tracking.MarkerCount + " hidden=" + tracking.Hidden);
+                    Shot("vr-4-tracking-" + count);
+                });
+            }
+
+            // 場面5：LiDAR で測った点がたまり、手の見え方が変わる
+            At(8.0f, () => deck.Show(4));
+            At(11.0f, () =>
+            {
+                InsideOutScan scan = Find<InsideOutScan>();
+                Console.WriteLine("PLAYTEST insideout particles=" + scan.Points.particleCount + " playing=" + scan.Points.isPlaying + " measured=" + scan.Measured + " left=" + scan.LeftTracked + " right=" + scan.RightTracked);
+                var list = new ParticleSystem.Particle[3];
+                int got = scan.Points.GetParticles(list);
+                for (int k = 0; k < got; k++)
+                {
+                    Console.WriteLine("PLAYTEST point " + list[k].position + " size=" + list[k].GetCurrentSize(scan.Points) + " color=" + list[k].GetCurrentColor(scan.Points) + " life=" + list[k].remainingLifetime);
+                }
+
+                var r = scan.Points.GetComponent<ParticleSystemRenderer>();
+                Console.WriteLine("PLAYTEST renderer enabled=" + r.enabled + " bounds=" + r.bounds + " mat=" + r.sharedMaterial.name + "/" + r.sharedMaterial.shader.name + " tex=" + r.sharedMaterial.mainTexture);
+                Shot("vr-5-scan");
+            });
+            At(11.1f, () => Turn(-60f));
+            At(13.0f, () => { Console.WriteLine("PLAYTEST insideout measured=" + Find<InsideOutScan>().Measured); Shot("vr-5-scan-turned"); });
+            At(13.1f, () => Turn(0f));
+
+            // 場面6：両手を上げると VR に切り替わる
+            At(13.5f, () => deck.Show(5));
+            At(14.5f, () => { Console.WriteLine("PLAYTEST vrmr vr=" + Find<VrMrSwitch>().IsVr); Shot("vr-6-mr"); Save(Find<VrMrSwitch>().RealTexture, "vr-6-mr-view"); });
+            At(14.6f, () => HandsUp(true));
+            At(15.0f, () => HandsUp(true));
+            At(16.2f, () => { Console.WriteLine("PLAYTEST vrmr vr=" + Find<VrMrSwitch>().IsVr); Shot("vr-6-vr"); Save(Find<VrMrSwitch>().VirtualTexture, "vr-6-vr-view"); });
+
+            // 場面7：面を見つけて物を置く
+            At(16.5f, () => { animator.Rebind(); deck.Show(6); });
+            At(19.5f, () => Turn(180f));
+            At(22.5f, () =>
+            {
+                SpatialAnchors anchors = Find<SpatialAnchors>();
+                anchors.PlaceAtGaze();
+                Console.WriteLine("PLAYTEST anchors points=" + anchors.PointCount + " floors=" + anchors.FloorsFound + " walls=" + anchors.WallsFound + " placed=" + anchors.PlacedCount + " particles=" + anchors.FeaturePoints.particleCount);
+                foreach (Transform child in anchors.transform)
+                {
+                    if (child.gameObject.activeSelf)
+                    {
+                        Console.WriteLine("PLAYTEST anchors child " + child.name + " at " + child.position + " scale " + child.localScale);
+                    }
+                }
+            });
+            At(22.6f, () => Shot("vr-7-anchors-back"));
+            At(23.0f, () => Turn(0f));
+            At(24.0f, () => Shot("vr-7-anchors"));
+
+            // 場面8：アイコンが並ぶ
+            At(24.5f, () => deck.Show(7));
+            At(26.0f, () => Shot("vr-8-apps"));
+            At(26.1f, () => Find<AppShowcase>().Bounce(1));
+            At(26.4f, () => { Console.WriteLine("PLAYTEST apps count=" + Find<AppShowcase>().Count + " bounced=" + Find<AppShowcase>().Bounced); Shot("vr-8-apps-bounce"); });
+            Run(0);
+        }
+
+        private static void Eyes(string name)
+        {
+            HeadsetView view = UnityEngine.Object.FindFirstObjectByType<HeadsetView>();
+            Save(view.LeftTexture, name + "-left");
+            Save(view.RightTexture, name + "-right");
+        }
+
+        private static void Save(RenderTexture texture, string name)
+        {
+            RenderTexture.active = texture;
+            var image = new Texture2D(texture.width, texture.height, TextureFormat.RGB24, false);
+            image.ReadPixels(new Rect(0, 0, texture.width, texture.height), 0, 0);
+            image.Apply();
+            RenderTexture.active = null;
+            Directory.CreateDirectory("Build");
+            File.WriteAllBytes("Build/test-" + name + ".png", image.EncodeToPNG());
+            UnityEngine.Object.DestroyImmediate(image);
+        }
+
         public static void At(float time, Action action)
         {
             Steps.Add((time, action));

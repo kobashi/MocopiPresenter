@@ -44,6 +44,12 @@ mocopi（Sony のモバイルモーションキャプチャー）で動く 3D �
 | `stand` | 回転式スタンド | `stand`（`icon` と `label` の並び）、`note` |
 | `agents` | コーディングエージェント | `agents`（数）、`troubles`（トラブルの名前）、`crackSpeed` |
 | `qr` | QR コードの案内 | `qr`（`title`、`caption`、`heading`、`steps`、`image`） |
+| `headset` | ヘッドトラッキング：頭の向き → ゲームのカメラ → ゴーグルの左右の画面（立体視） | `headset`（`eyeGap`、`follow`、`keyTurn`） |
+| `tracking` | アウトサイドイン：まわりのカメラが体のマーカーを捉え、座標を出す | `tracking`（`cameras`：最初の台数、`coordinates`） |
+| `insideout` | インサイドアウト：ゴーグルのカメラと LiDAR で空間を測り、手を追う | `scan`（`cameraWidth`、`cameraHeight`、`rays`、`sweepsPerSecond`、`range`、`keyTurn`） |
+| `vrmr` | VR と MR の切り替え（ゴーグルの中の景色を画面に出す） | `mixed`（`start`、`handsUp`、`hold`、`wipe`） |
+| `anchors` | 空間アンカー：特徴点 → 床や壁を見つける → 物を置いて固定 | `anchors`（`pointsPerSecond`、`pointsForPlane`、`view`、`range`、`handUp`、`hold`、`keyTurn`） |
+| `apps` | VR アプリのアイコンを並べる | `apps`（`icon`：coaster / saber / pithouse / zombie、`label`） |
 
 新しい仕掛けの作り方は [CLAUDE.md](CLAUDE.md) の「仕掛けを足す」を参照してください。
 
@@ -85,6 +91,13 @@ mocopi（Sony のモバイルモーションキャプチャー）で動く 3D �
 | T / Shift+T | スタンドを1面回す・逆回り（場面3） |
 | W | エージェントを働かせる（場面5。鞭の代わり） |
 | Q | ゲーム案内（QR）の表示 |
+| C | 頭の向きの正面合わせ（VR体験会の場面3・5・6・7） |
+| A / D | 頭の向きの代わりに左右へ回す（場面3・5・7） |
+| G | 外のカメラの台数を変える（場面4） |
+| L | 測った点を消す（場面5・7） |
+| X | VR と MR の切り替え（場面6。両手を上げる代わり） |
+| K | 物を置く（場面7。片手を上げる代わり） |
+| Y | アイコンを跳ねさせる（場面8。手で触れる代わり） |
 | S | 音のオン・オフ |
 | F | 手元の画面の左右反転 |
 | P | プレゼンの切り替え（一覧を開く・閉じる） |
@@ -100,6 +113,8 @@ mocopi（Sony のモバイルモーションキャプチャー）で動く 3D �
 |---|---|---|---|
 | `jumpHeight` | 1 | ジャンプとみなす腰の上がり幅（m）。下げると反応しやすい | 0.12 |
 | `crackSpeed` | 5 | 鞭が鳴ったとみなす先端の速さ（m/秒）。下げると反応しやすい | 8 |
+| `mixed.handsUp` / `mixed.hold` | VR体験会 6 | 両手が頭よりどれだけ上か（m）／その姿勢を続ける秒数 | 0.05 / 0.4 |
+| `anchors.handUp` / `anchors.hold` | VR体験会 7 | 片手が頭よりどれだけ上か（m）／その姿勢を続ける秒数 | 0.05 / 0.4 |
 
 ## 開発する
 

@@ -1,0 +1,135 @@
+{
+  "name": "VR体験会",
+  "slides": [
+    {
+      "big": "VR体験会",
+      "lines": [
+        "（仮）サブタイトル・日付"
+      ],
+      "gimmicks": [
+        "blocks"
+      ],
+      "blocks": [
+        "VR",
+        "体験会"
+      ],
+      "blocksOnJump": true
+    },
+    {
+      "title": "アバターはこうして動いている",
+      "gimmicks": [
+        "stand"
+      ],
+      "stand": [
+        {
+          "icon": "sensor",
+          "label": "センサー（mocopi）"
+        },
+        {
+          "icon": "receiver",
+          "label": "レシーバー"
+        },
+        {
+          "icon": "pc",
+          "label": "PC（mocopi アプリ → Unity）"
+        },
+        {
+          "icon": "avatar",
+          "label": "3Dアバター"
+        },
+        {
+          "icon": "projector",
+          "label": "プロジェクター"
+        }
+      ]
+    },
+    {
+      "title": "ヘッドトラッキングとカメラ",
+      "lines": [
+        "頭の動きに合わせて、ゲームのカメラが動く",
+        "左右の目の絵をゴーグルに映す（立体視）",
+        "頭の動き ＝ カメラの動き"
+      ],
+      "gimmicks": [
+        "headset"
+      ],
+      "headset": {
+        "eyeGap": 0.064
+      }
+    },
+    {
+      "title": "VRの仕組み：アウトサイドイン",
+      "lines": [
+        "外のカメラが、体のマーカーを捉える",
+        "2台以上に見えた点は、座標が決まる"
+      ],
+      "note": "カメラを増やすほど、死角が減る",
+      "gimmicks": [
+        "tracking"
+      ],
+      "tracking": {
+        "cameras": 1
+      }
+    },
+    {
+      "title": "VRの仕組み：インサイドアウト",
+      "lines": [
+        "ゴーグルのカメラと LiDAR で、まわりを測る",
+        "カメラに映った手から、指の動きを読む"
+      ],
+      "note": "外部の装置なしで、どこでも使える",
+      "gimmicks": [
+        "insideout"
+      ]
+    },
+    {
+      "title": "VRとMR",
+      "lines": [
+        "VR：見える世界をすべて仮想にする",
+        "MR：現実の部屋に仮想の物を重ねる",
+        "現実と仮想を、どこまで混ぜるか"
+      ],
+      "gimmicks": [
+        "vrmr"
+      ],
+      "mixed": {
+        "start": "MR"
+      }
+    },
+    {
+      "title": "空間アンカーの仕組み",
+      "lines": [
+        "特徴点から、床や壁などの面を見つける",
+        "見つけた面に、仮想の物を置いて固定する"
+      ],
+      "note": "現実の場所に、仮想のピンを打つ",
+      "gimmicks": [
+        "anchors"
+      ]
+    },
+    {
+      "title": "VRアプリを試そう",
+      "gimmicks": [
+        "apps"
+      ],
+      "apps": [
+        {
+          "icon": "coaster",
+          "label": "ジェットコースター"
+        },
+        {
+          "icon": "saber",
+          "label": "ビートセイバー"
+        },
+        {
+          "icon": "pithouse",
+          "label": "VR竪穴式住居"
+        },
+        {
+          "icon": "zombie",
+          "label": "ゾンビFPS"
+        }
+      ]
+    }
+  ]
+}

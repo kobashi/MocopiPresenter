@@ -52,7 +52,8 @@ Assets/
 │   └── Scenes/Guidance.unity   スクリプトで作るシーン（手で編集しない）
 └── StreamingAssets/Presentations/
     ├── selected.txt            使うプレゼンの名前
-    └── guidance2026/           プレゼン1つ分（slides.json と素材）
+    ├── guidance2026/           プレゼン1つ分（slides.json と素材）
+    └── vr-experience/          VR 体験会
 ```
 
 - シーンは手で配置せず、`Editor/` のスクリプトで組み立てる。舞台や仕掛けを変えたら、シーンを作り直して確かめる。
@@ -84,6 +85,17 @@ Assets/
 | `stand` | BookStand | `stand`（`icon` と `label` の配列）、`note` | T / Shift+T |
 | `agents` | AgentScene | `agents`（数）、`troubles`、`crackSpeed` | W |
 | `qr` | QrGuide | `qr`（`title` `caption` `heading` `steps` `image`） | Q |
+| `headset` | HeadsetView | `headset`（`eyeGap` `follow` `keyTurn`） | C / A / D |
+| `tracking` | OutsideInTracking | `tracking`（`cameras` `coordinates`） | G |
+| `insideout` | InsideOutScan | `scan`（`cameraWidth` `cameraHeight` `rays` `sweepsPerSecond` `range` `keyTurn`） | C / A / D / L |
+| `vrmr` | VrMrSwitch | `mixed`（`start` `handsUp` `hold` `wipe`） | X / C |
+| `anchors` | SpatialAnchors | `anchors`（`pointsPerSecond` `pointsForPlane` `view` `range` `handUp` `hold` `keyTurn`） | K / L / C / A / D |
+| `apps` | AppShowcase | `apps`（`icon` と `label` の配列） | Y |
+
+- VR 体験会の仕掛け（headset〜apps）の組み立ては `Editor/VrGimmickBuilder.cs` にまとめてある。頭の向きは `HeadPose`（場面に入ったときの向きが正面）で読む。
+- 原寸の「ゲームの世界」は舞台の下（y = -300 / -600。霧で見えない）に置き、そこを写したカメラの映像をゴーグルの画面に出している。
+- `vrmr` の仮想の物は層 31 に置き、場面に出ている間だけ舞台のカメラ（Camera.main）から外す。
+- 床や壁に貼り付ける光の粒・格子は、ソフトパーティクルで消えないよう素材の `_InvFade` を大きくしてある。
 
 ### 仕掛けを足す
 
@@ -119,6 +131,7 @@ Unity -batchmode -quit -projectPath . -executeMethod Guidance.EditorTools.Guidan
 - `PlayTest` は `Run(場面の番号)` で再生を始め、`At(秒, 操作)` で手順を並べる。手や足の代わりの球は `Kicker(位置, 手かどうか)`。
 - 画面に重ねる表示（QR 案内、操作一覧、プレゼンの一覧、2画面出力）は再生テストの画像には写らない。確かめるときは、ユーザーの了解を得て Mac 版をビルドし、`-guide-shot 出力.png`（案内を出して撮影して終了）に、必要なら `-guide-mirror on|off`、`-open-menu`（プレゼンの一覧を開く）を付けて起動する。
 - プレゼンの切り替えは `PlayTest.Switch` で確かめられる。
+- VR 体験会の仕掛けは `PlayTest.Vr` でまとめて確かめられる（ゴーグルの画面の絵も `Build/test-vr-*.png` に出る）。
 - 仕掛けの設定値（public な欄）を変えたら、シーンを作り直さないと反映されない（シーンに古い値が保存されているため）。
 - 計算で作る形の向き（表裏）を間違えると、箱が中から見えて透けたようになる。近くから撮って確かめる。
 

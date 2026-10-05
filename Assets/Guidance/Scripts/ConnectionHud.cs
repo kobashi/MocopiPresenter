@@ -123,6 +123,7 @@ namespace Guidance
             text.AppendLine("M: 部品をはめる・戻す（場面2）");
             text.AppendLine("T: スタンドを1面回す　Shift+T: 逆回り（場面3）");
             text.AppendLine("W: エージェントを働かせる（場面5）");
+            text.AppendLine("VR体験会　C: 頭の正面合わせ　A / D: 向きを左右に回す　G: カメラの台数　L: 点を消す　X: VR ⇔ MR　K: 物を置く　Y: アイコンを跳ねさせる");
             text.AppendLine("Q: ゲーム案内（QR）　　S: 音のオン・オフ　　F: 手元の画面の鏡合わせ　　P: プレゼンの切り替え");
             text.Append("H: この表示を隠す・出す　　R: IP再取得　　Esc: 終了");
 
