@@ -99,6 +99,7 @@ namespace Guidance.EditorTools
 
             var hud = new GameObject("ConnectionHud").AddComponent<ConnectionHud>();
             hud.Receiver = receiver;
+            hud.gameObject.AddComponent<PresentationMenu>().Deck = Object.FindFirstObjectByType<SlideDeck>();
 
             // QR コードの案内（場面の "gimmicks" に "qr" と書くと出る。文言と画像はプレゼンのフォルダから読む）
             var guide = new GameObject("QrGuide").AddComponent<QrGuide>();

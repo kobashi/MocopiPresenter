@@ -62,7 +62,8 @@ Assets/
 
 1. `Assets/StreamingAssets/Presentations/〈名前〉/slides.json` を作る（`guidance2026` をまねる）。
 2. 画像などの素材は同じフォルダに置く（例：QR コードは `swift Tools/make-qr.swift <URL> <出力.png>`）。
-3. 使うプレゼンを `Presentations/selected.txt` に書く。起動時の引数 `-presentation 名前` でも選べる。
+3. 起動中は P キーの一覧（`PresentationMenu.cs`、手元の画面だけに出る）で切り替える。選んだものは `Presentations/selected.txt` に記録され、次回の起動に使われる（エディタでは記録しない）。起動時の引数 `-presentation 名前` でも選べる。
+4. `slides.json` の先頭に `"name"` を書くと、一覧に出る名前になる。新しいプレゼンは `sample`（ひな形）をまねるとよい。
 
 場面（`slides` の1要素）の共通項目：
 
@@ -116,7 +117,8 @@ Unity -batchmode -quit -projectPath . -executeMethod Guidance.EditorTools.Guidan
 ```
 
 - `PlayTest` は `Run(場面の番号)` で再生を始め、`At(秒, 操作)` で手順を並べる。手や足の代わりの球は `Kicker(位置, 手かどうか)`。
-- 画面に重ねる表示（QR 案内、操作一覧、2画面出力）は再生テストの画像には写らない。確かめるときは、ユーザーの了解を得て Mac 版をビルドし、`-guide-shot 出力.png`（案内を出して撮影して終了）と `-guide-mirror on|off` を付けて起動する。
+- 画面に重ねる表示（QR 案内、操作一覧、プレゼンの一覧、2画面出力）は再生テストの画像には写らない。確かめるときは、ユーザーの了解を得て Mac 版をビルドし、`-guide-shot 出力.png`（案内を出して撮影して終了）に、必要なら `-guide-mirror on|off`、`-open-menu`（プレゼンの一覧を開く）を付けて起動する。
+- プレゼンの切り替えは `PlayTest.Switch` で確かめられる。
 - 仕掛けの設定値（public な欄）を変えたら、シーンを作り直さないと反映されない（シーンに古い値が保存されているため）。
 - 計算で作る形の向き（表裏）を間違えると、箱が中から見えて透けたようになる。近くから撮って確かめる。
 

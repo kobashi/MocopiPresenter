@@ -30,6 +30,11 @@ namespace Guidance
                 DisplayRouter.SetMirror(args[mirror + 1] == "on");
             }
 
+            if (Array.IndexOf(args, "-open-menu") >= 0)
+            {
+                FindFirstObjectByType<PresentationMenu>().Open();
+            }
+
             yield return new WaitForSeconds(1f);
             ScreenCapture.CaptureScreenshot(args[index + 1]);
             yield return new WaitForSeconds(1f);

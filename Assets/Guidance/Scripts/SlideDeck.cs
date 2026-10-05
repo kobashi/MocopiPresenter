@@ -64,6 +64,12 @@ namespace Guidance
 
         private void Update()
         {
+            // プレゼンの一覧を開いている間は、場面を送らない
+            if (PresentationMenu.IsOpen)
+            {
+                return;
+            }
+
             if (Input.GetKeyDown(KeyCode.RightArrow) || Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.PageDown))
             {
                 this.Show(this.Current + 1);
@@ -83,10 +89,30 @@ namespace Guidance
         /// </summary>
         public void Load()
         {
+            this.Load(Presentation.Choose());
+        }
+
+        /// <summary>
+        /// 起動したままプレゼンを切り替える。いまの場面の仕掛けを片付けてから読み込み、最初の場面を出す。
+        /// </summary>
+        public void LoadPresentation(string presentation)
+        {
+            foreach (Gimmick gimmick in this.gimmicks)
+            {
+                gimmick.Exit(this);
+            }
+
+            this.Load(presentation);
+            this.Current = 0;
+            this.Show(0);
+        }
+
+        private void Load(string presentation)
+        {
             this.gimmicks.Clear();
             this.gimmicks.AddRange(FindObjectsByType<Gimmick>(FindObjectsInactive.Include, FindObjectsSortMode.None));
 
-            this.PresentationName = Presentation.Choose();
+            this.PresentationName = presentation;
             string path = Presentation.PathOf(this.PresentationName, Presentation.FileName);
             try
             {

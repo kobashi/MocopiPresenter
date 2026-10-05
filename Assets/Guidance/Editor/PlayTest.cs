@@ -220,6 +220,39 @@ namespace Guidance.EditorTools
         }
 
         /// <summary>
+        /// 起動したままプレゼンを切り替えられることを確かめる（ガイダンスの場面2からサンプルへ、またガイダンスへ）。
+        /// </summary>
+        public static void Switch()
+        {
+            SlideDeck deck = null;
+            void Report(string name)
+            {
+                deck = UnityEngine.Object.FindFirstObjectByType<SlideDeck>();
+                var active = new List<string>();
+                foreach (Gimmick gimmick in UnityEngine.Object.FindObjectsByType<Gimmick>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+                {
+                    if (gimmick.InUse)
+                    {
+                        active.Add(gimmick.Id);
+                    }
+                }
+
+                Console.WriteLine("PLAYTEST " + name + ": presentation=" + deck.PresentationName + " slide=" + (deck.Current + 1) + "/" + deck.Slides.Length
+                    + " title=" + deck.Title.text + " big=" + deck.Big.text + " gimmicks=[" + string.Join(",", active) + "] list=" + Presentation.List().Count);
+                Shot(name);
+            }
+
+            At(1.5f, () => Report("switch-1-guidance"));
+            At(1.6f, () => UnityEngine.Object.FindFirstObjectByType<PresentationMenu>().Switch("sample"));
+            At(3.0f, () => Report("switch-2-sample"));
+            At(3.1f, () => deck.Show(2));
+            At(3.6f, () => Report("switch-3-sample-last"));
+            At(3.7f, () => UnityEngine.Object.FindFirstObjectByType<PresentationMenu>().Switch("guidance2026"));
+            At(5.0f, () => Report("switch-4-back"));
+            Run(1);
+        }
+
+        /// <summary>
         /// アバターの体の一部と同じ扱いの球（蹴りの代わり）
         /// </summary>
         public static Rigidbody Kicker(Vector3 position, bool hand)

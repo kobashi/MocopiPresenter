@@ -55,6 +55,63 @@ namespace Guidance
             return "";
         }
 
+        [Serializable]
+        private sealed class Header
+        {
+            public string name = "";
+        }
+
+        /// <summary>
+        /// 使えるプレゼンの一覧（slides.json のあるフォルダ）。name は slides.json の "name"（無ければフォルダ名）
+        /// </summary>
+        public static List<(string folder, string name)> List()
+        {
+            var list = new List<(string, string)>();
+            if (!Directory.Exists(Root))
+            {
+                return list;
+            }
+
+            string[] folders = Directory.GetDirectories(Root);
+            Array.Sort(folders, StringComparer.Ordinal);
+            foreach (string folder in folders)
+            {
+                string file = Path.Combine(folder, FileName);
+                if (!File.Exists(file))
+                {
+                    continue;
+                }
+
+                string name = Path.GetFileName(folder);
+                try
+                {
+                    string title = JsonUtility.FromJson<Header>(File.ReadAllText(file)).name;
+                    list.Add((name, string.IsNullOrEmpty(title) ? name : title));
+                }
+                catch (Exception)
+                {
+                    list.Add((name, name + "（slides.json を読めません）"));
+                }
+            }
+
+            return list;
+        }
+
+        /// <summary>
+        /// 次に起動したときに使うプレゼンとして selected.txt に書く。書けなければ何もしない
+        /// </summary>
+        public static void Remember(string presentation)
+        {
+            try
+            {
+                File.WriteAllText(Path.Combine(Root, "selected.txt"), presentation + "\n");
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning("selected.txt に書けません: " + e.Message);
+            }
+        }
+
         /// <summary>
         /// プレゼンの中の素材ファイルの場所
         /// </summary>

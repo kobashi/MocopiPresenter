@@ -1,0 +1,23 @@
+{
+  "name": "サンプル（新しいプレゼンのひな形）",
+  "slides": [
+    {
+      "big": "サンプル",
+      "lines": ["新しいプレゼンのひな形です", "ジャンプすると積み木が降ってきます"],
+      "gimmicks": ["blocks"],
+      "blocks": ["SAMPLE"],
+      "blocksOnJump": true
+    },
+    {
+      "title": "仕掛けの例：マーブルマシン",
+      "lines": ["部品をはめると玉が回り続けます"],
+      "gimmicks": ["marble"]
+    },
+    {
+      "title": "仕掛けを使わない場面",
+      "lines": ["・見出し（title）", "・本文（lines）", "・締めの一言（note）"],
+      "note": "slides.json を書き換えて作ります",
+      "camera": 1
+    }
+  ]
+}

@@ -36,7 +36,7 @@ namespace Guidance
                 this.RefreshAddresses();
             }
 
-            if (Input.GetKeyDown(KeyCode.Escape))
+            if (Input.GetKeyDown(KeyCode.Escape) && !PresentationMenu.UsedEscape)
             {
                 Application.Quit();
             }
@@ -69,7 +69,8 @@ namespace Guidance
 
         private void OnGUI()
         {
-            if (!this.Visible)
+            // プレゼンの一覧を開いている間は、重ならないよう隠す
+            if (!this.Visible || PresentationMenu.IsOpen)
             {
                 return;
             }
@@ -122,7 +123,7 @@ namespace Guidance
             text.AppendLine("M: 部品をはめる・戻す（場面2）");
             text.AppendLine("T: スタンドを1面回す　Shift+T: 逆回り（場面3）");
             text.AppendLine("W: エージェントを働かせる（場面5）");
-            text.AppendLine("Q: ゲーム案内（QR）　　S: 音のオン・オフ　　F: 手元の画面の鏡合わせ");
+            text.AppendLine("Q: ゲーム案内（QR）　　S: 音のオン・オフ　　F: 手元の画面の鏡合わせ　　P: プレゼンの切り替え");
             text.Append("H: この表示を隠す・出す　　R: IP再取得　　Esc: 終了");
 
             var content = new GUIContent(text.ToString());
