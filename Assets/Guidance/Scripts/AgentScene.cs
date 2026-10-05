@@ -9,8 +9,22 @@ namespace Guidance
     /// エージェントは放っておくと居眠りする。アバターが右手の鞭を振って当てる（または鋭く振って鳴らす）と
     /// しばらく働き、近くのバグを撃って壊す。W キーでも全員を働かせられる（リハーサルと保険用）。
     /// </summary>
-    public sealed class AgentScene : MonoBehaviour
+    public sealed class AgentScene : Gimmick
     {
+        /// <summary>
+        /// 場面の JSON から読む設定
+        /// </summary>
+        [System.Serializable]
+        private sealed class Settings
+        {
+            // エージェント（ロボット）の数
+            public int agents = 4;
+            // 押し寄せるトラブルの名前
+            public string[] troubles = new string[0];
+            // 鞭が鳴ったとみなす先端の速さ（m/秒）。0 なら既定値
+            public float crackSpeed;
+        }
+
         private sealed class Agent
         {
             public Transform Root;
@@ -98,6 +112,22 @@ namespace Guidance
         /// <summary>
         /// 場面の切り替えで呼ばれる。count が 0 なら片付けて隠す。
         /// </summary>
+        protected override void OnEnter(string json, SlideDeck deck)
+        {
+            Settings settings = Read<Settings>(json);
+            // 撃破数はスクリーンの本文の欄に出す
+            this.Counter = deck.Body;
+            this.Set(settings.agents, settings.troubles, settings.crackSpeed);
+        }
+
+        protected override void OnExit(SlideDeck deck)
+        {
+            this.Set(0, null, 0f);
+        }
+
+        /// <summary>
+        /// ロボットを count 体並べ直し、バグや弾を片付ける。count が 0 なら片付けるだけ。
+        /// </summary>
         public void Set(int count, string[] newTroubles, float crackSpeed)
         {
             if (crackSpeed > 0f)
@@ -105,7 +135,6 @@ namespace Guidance
                 this.CrackSpeed = crackSpeed;
             }
 
-            this.gameObject.SetActive(count > 0);
             if (!Application.isPlaying)
             {
                 return;

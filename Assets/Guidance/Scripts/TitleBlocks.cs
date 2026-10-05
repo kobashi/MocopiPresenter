@@ -10,8 +10,24 @@ namespace Guidance
     /// blocksOnJump が true の場面では、アバターがジャンプしたときに降ってくる（J キーでも降る）。B キーで積み直す。
     /// rain に言葉を並べると、その言葉の積み木が空から降り続けて舞台を埋める。
     /// </summary>
-    public sealed class TitleBlocks : MonoBehaviour
+    public sealed class TitleBlocks : Gimmick
     {
+        /// <summary>
+        /// 場面の JSON から読む設定
+        /// </summary>
+        [System.Serializable]
+        private sealed class Settings
+        {
+            // 積む文字（上の段から順に1行ずつ）
+            public string[] blocks = new string[0];
+            // true なら、アバターがジャンプしたときに降ってくる
+            public bool blocksOnJump;
+            // ジャンプとみなす腰の上がり幅（m）。0 なら既定値
+            public float jumpHeight;
+            // 空から降らせ続ける言葉
+            public string[] rain = new string[0];
+        }
+
         public GameObject Template;
         public ParticleSystem Sparks;
         public Animator Avatar;
@@ -51,6 +67,20 @@ namespace Guidance
         public int Jumps { get; private set; }
 
         public int BlockCount => this.blocks.Count;
+
+        protected override void OnEnter(string json, SlideDeck deck)
+        {
+            Settings settings = Read<Settings>(json);
+            this.Set(settings.blocks, settings.rain, settings.blocksOnJump, settings.jumpHeight, Application.isPlaying);
+        }
+
+        protected override void OnExit(SlideDeck deck)
+        {
+            this.Clear(Application.isPlaying);
+            this.rows = new string[0];
+            this.rain = new string[0];
+            this.onJump = false;
+        }
 
         private void Update()
         {

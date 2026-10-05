@@ -22,8 +22,27 @@ mocopi（Sony のモバイルモーションキャプチャー）で動く 3D �
 | 5 | コーディングエージェントと開発 | 居眠りするロボットを鞭で起こして働かせ、押し寄せるバグを撃破させる |
 | 6 | 続きはゲームで | 学生用ゲームの QR コードと検索手順を出す |
 
-場面の文言と仕掛けの設定は `Assets/StreamingAssets/slides.json` に書いてあります。
-ビルド後も、アプリのフォルダ内の `MocopiPresenter_Data/StreamingAssets/slides.json` を書き換えれば、作り直さずに内容を変えられます。
+場面の文言と仕掛けの設定は `Assets/StreamingAssets/Presentations/guidance2026/slides.json` に書いてあります。
+ビルド後も、アプリのフォルダ内の `MocopiPresenter_Data/StreamingAssets/Presentations/guidance2026/slides.json` を書き換えれば、作り直さずに内容を変えられます。
+
+## プレゼンを差し替える
+
+1つのアプリで複数のプレゼンを扱えます。プレゼンは `StreamingAssets/Presentations/〈名前〉/` に1つずつ置きます。
+
+1. `guidance2026` フォルダをまねて、新しいフォルダに `slides.json` を作る。画像などの素材も同じフォルダに置く。
+2. 使うプレゼンの名前を `StreamingAssets/Presentations/selected.txt` に書く（起動時の引数 `-presentation 名前` でも選べる）。
+
+各場面の `gimmicks` に仕掛けの名前を書くと、その場面で仕掛けが出ます。
+
+| 仕掛け | 内容 | 場面に書く設定 |
+|---|---|---|
+| `blocks` | 文字の積み木 | `blocks`（積む文字の行）、`blocksOnJump`、`jumpHeight`、`rain`（降らせる言葉） |
+| `marble` | マーブルマシン | なし |
+| `stand` | 回転式スタンド | `stand`（`icon` と `label` の並び）、`note` |
+| `agents` | コーディングエージェント | `agents`（数）、`troubles`（トラブルの名前）、`crackSpeed` |
+| `qr` | QR コードの案内 | `qr`（`title`、`caption`、`heading`、`steps`、`image`） |
+
+新しい仕掛けの作り方は [CLAUDE.md](CLAUDE.md) の「仕掛けを足す」を参照してください。
 
 ## 動かす
 
@@ -71,7 +90,7 @@ mocopi（Sony のモバイルモーションキャプチャー）で動く 3D �
 
 ### 反応の調整
 
-`slides.json` の各場面に次の値を書き足すと、体の動きへの反応しやすさを変えられます。
+`slides.json` の各場面に次の値を書き足すと、体の動きへの反応しやすさを変えられます（同じ場面に `gimmicks` で仕掛けを指定しておく必要があります）。
 
 | 値 | 場面 | 意味 | 既定 |
 |---|---|---|---|

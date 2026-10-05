@@ -3,16 +3,18 @@
     {
       "big": "情報システムコース",
       "lines": ["コースガイダンス 2026"],
+      "gimmicks": ["blocks"],
       "blocks": ["情報システム", "コース2026"],
       "blocksOnJump": true
     },
     {
       "title": "システムとは",
       "lines": ["構成要素すべてが一体となって機能する仕組み"],
-      "machine": true
+      "gimmicks": ["marble"]
     },
     {
       "title": "いま動いているのもシステム",
+      "gimmicks": ["stand"],
       "stand": [
         { "icon": "sensor", "label": "センサー（mocopi）" },
         { "icon": "receiver", "label": "レシーバー" },
@@ -24,6 +26,7 @@
     },
     {
       "title": "何を学ぶか",
+      "gimmicks": ["blocks"],
       "rain": [
         "C", "C#", "JavaScript", "SQL", "PHP", "Processing", "Pure Data", "Python", "Java", "Swift", "VBA",
         "AI", "機械学習", "LLM", "ChatGPT", "Claude Code",
@@ -34,6 +37,7 @@
     },
     {
       "title": "コーディングエージェントと開発",
+      "gimmicks": ["agents"],
       "agents": 4,
       "troubles": ["バグ", "エラー", "フリーズ", "クラッシュ", "404", "null", "仕様変更", "締切"]
     },
@@ -41,7 +45,14 @@
       "title": "続きはゲームで",
       "big": "情報システム・クエスト",
       "lines": ["スマホで遊べます"],
-      "guide": true
+      "gimmicks": ["qr"],
+      "qr": {
+        "title": "学生用ゲームはこちら",
+        "caption": "カメラで QR コードを読み取る",
+        "heading": "または Web で検索",
+        "steps": ["「こばし講義」で検索", "コースガイダンス", "情報システム2026"],
+        "image": "qr.png"
+      }
     }
   ]
 }

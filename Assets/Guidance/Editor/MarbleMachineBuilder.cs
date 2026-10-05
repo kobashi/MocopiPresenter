@@ -14,8 +14,11 @@ namespace Guidance.EditorTools
         private static readonly Color Magenta = new Color(1f, 0.25f, 0.7f);
         private static readonly Color Yellow = new Color(1f, 0.85f, 0.2f);
 
-        public static MarbleMachine Build(Transform stage, ParticleSystem sparks, Animator avatar, Material particle)
+        [GimmickBuilder]
+        public static Gimmick Build(GimmickContext context)
         {
+            Transform stage = context.Stage;
+            Material particle = context.Particle;
             Transform root = new GameObject("MarbleMachine").transform;
             root.SetParent(stage, false);
             // 180°回して、機械の +X が客席から見て右になるようにする（+Z は客席から見て奥）
@@ -125,8 +128,9 @@ namespace Guidance.EditorTools
             machine.Part = part;
             machine.Ghost = ghost.gameObject;
             machine.MarbleTemplate = marble;
-            machine.Sparks = sparks;
-            machine.Avatar = avatar;
+            machine.Id = "marble";
+            machine.Sparks = context.Sparks;
+            machine.Avatar = context.Avatar;
             return machine;
         }
 

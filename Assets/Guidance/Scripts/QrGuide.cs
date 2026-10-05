@@ -5,11 +5,33 @@ using UnityEngine.UI;
 namespace Guidance
 {
     /// <summary>
-    /// 学生用ゲームへの案内（QR コードと検索手順）を、観客向けの画面の右側に表示する。Q キーで表示を切り替える。
-    /// 文言は Inspector で編集できる。QR 画像は Tools/make-qr.swift で作り直す。
+    /// QR コードと検索手順の案内を、観客向けの画面の右側に表示する仕掛け（Id は "qr"）。
+    /// この仕掛けを使う場面に入ると出て、出ると消える。Q キーでいつでも出し入れできる。
+    /// 文言と画像は、プレゼンで最初にこの仕掛けを使う場面の "qr" に書く。画像はプレゼンのフォルダに置く
+    /// （QR 画像は Tools/make-qr.swift で作る）。
     /// </summary>
-    public sealed class QrGuide : MonoBehaviour
+    public sealed class QrGuide : Gimmick
     {
+        /// <summary>
+        /// 場面の JSON の "qr" に書く設定
+        /// </summary>
+        [System.Serializable]
+        public sealed class Settings
+        {
+            public string title = "";
+            public string caption = "";
+            public string heading = "";
+            public string[] steps = new string[0];
+            // プレゼンのフォルダにある QR コードの画像
+            public string image = "qr.png";
+        }
+
+        [System.Serializable]
+        private sealed class SlideSettings
+        {
+            public Settings qr;
+        }
+
         public Texture2D QrCode;
         public bool Visible;
         public string Title = "学生用ゲームはこちら";
@@ -26,6 +48,47 @@ namespace Guidance
         private const float PanelWidth = 820f;
 
         private GameObject panel;
+        private GameObject canvasObject;
+
+        protected override bool HideWhenUnused => false;
+
+        public override void OnPresentationLoaded(SlideDeck deck)
+        {
+            this.Configure(deck.FirstSlideUsing(this.Id), deck);
+        }
+
+        protected override void OnEnter(string json, SlideDeck deck)
+        {
+            this.Configure(json, deck);
+            this.Visible = true;
+        }
+
+        protected override void OnExit(SlideDeck deck)
+        {
+            this.Visible = false;
+        }
+
+        /// <summary>
+        /// 場面の "qr" の設定で、文言と画像を入れ替えて作り直す。
+        /// </summary>
+        private void Configure(string json, SlideDeck deck)
+        {
+            Settings settings = json != null ? Read<SlideSettings>(json).qr : null;
+            if (settings == null)
+            {
+                return;
+            }
+
+            this.Title = settings.title;
+            this.QrCaption = settings.caption;
+            this.SearchHeading = settings.heading;
+            this.SearchSteps = settings.steps ?? new string[0];
+            this.QrCode = Presentation.LoadImage(deck.PresentationName, settings.image, FilterMode.Point);
+            if (Application.isPlaying)
+            {
+                this.Build();
+            }
+        }
         private bool wasVisible;
 
         private void Start()
@@ -62,7 +125,13 @@ namespace Guidance
         /// </summary>
         private void Build()
         {
+            if (this.canvasObject != null)
+            {
+                Destroy(this.canvasObject);
+            }
+
             var canvas = new GameObject("QrGuideCanvas", typeof(Canvas), typeof(CanvasScaler)).GetComponent<Canvas>();
+            this.canvasObject = canvas.gameObject;
             canvas.transform.SetParent(this.transform, false);
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             canvas.targetDisplay = DisplayRouter.ProjectorDisplay;
@@ -93,6 +162,7 @@ namespace Guidance
             qr.rectTransform.anchoredPosition = new Vector2(0f, y);
             qr.rectTransform.sizeDelta = new Vector2(500f, 500f);
             qr.texture = this.QrCode;
+            qr.enabled = this.QrCode != null;
             qr.raycastTarget = false;
             y -= 510f;
 

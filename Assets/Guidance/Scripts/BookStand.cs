@@ -11,8 +11,19 @@ namespace Guidance
     /// 手が面に触れるたびに、カチッと1面ぶん回る。
     /// T キーでも1面ずつ回せる（Shift+T で逆回り）。項目は slides.json の stand で指定する。
     /// </summary>
-    public sealed class BookStand : MonoBehaviour
+    public sealed class BookStand : Gimmick
     {
+        /// <summary>
+        /// 場面の JSON から読む設定
+        /// </summary>
+        [System.Serializable]
+        private sealed class Settings
+        {
+            public Item[] stand = new Item[0];
+            // 全部見せ終わったときに出す一言
+            public string note = "";
+        }
+
         [System.Serializable]
         public sealed class Item
         {
@@ -75,11 +86,19 @@ namespace Guidance
         /// <summary>
         /// 場面の切り替えで呼ばれる。項目が無ければ隠す。
         /// </summary>
+        protected override void OnEnter(string json, SlideDeck deck)
+        {
+            Settings settings = Read<Settings>(json);
+            // 見せた項目はスクリーンの本文に書き足し、締めの一言は全部見せ終わってから出す
+            this.Body = deck.Body;
+            this.Note = deck.Note;
+            this.Set(settings.stand, settings.note);
+        }
+
         public void Set(Item[] newItems, string newNote)
         {
             this.items = newItems ?? new Item[0];
             this.note = newNote ?? "";
-            this.gameObject.SetActive(this.items.Length > 0);
             if (!Application.isPlaying || this.items.Length == 0)
             {
                 return;

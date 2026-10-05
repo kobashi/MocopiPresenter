@@ -8,8 +8,11 @@ namespace Guidance.EditorTools
     /// </summary>
     public static class AgentSceneBuilder
     {
-        public static AgentScene Build(Transform stage, ParticleSystem sparks, Animator avatar, Material particle, TMPro.TMP_Text counter)
+        [GimmickBuilder]
+        public static Gimmick Build(GimmickContext context)
         {
+            Transform stage = context.Stage;
+            Material particle = context.Particle;
             Transform root = new GameObject("AgentScene").transform;
             root.SetParent(stage, false);
 
@@ -133,9 +136,9 @@ namespace Guidance.EditorTools
             scene.BoltTemplate = bolt.gameObject;
             scene.DebrisTemplate = debris.gameObject;
             scene.Whip = whip;
-            scene.Sparks = sparks;
-            scene.Avatar = avatar;
-            scene.Counter = counter;
+            scene.Id = "agents";
+            scene.Sparks = context.Sparks;
+            scene.Avatar = context.Avatar;
             return scene;
         }
 

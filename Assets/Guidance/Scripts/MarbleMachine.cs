@@ -10,7 +10,7 @@ namespace Guidance
     /// M キーでも「はめる／最初に戻す」を切り替えられる（リハーサルと、うまく運べなかったときの保険）。
     /// コースの形は Editor/MarbleMachineBuilder.cs で作っている。座標はすべてこのオブジェクトから見た位置。
     /// </summary>
-    public sealed class MarbleMachine : MonoBehaviour
+    public sealed class MarbleMachine : Gimmick
     {
         private sealed class Marble
         {
@@ -66,7 +66,7 @@ namespace Guidance
         private float nextRefill;
         private float cycleBefore;
 
-        private void OnEnable()
+        protected override void OnEnter(string json, SlideDeck deck)
         {
             if (Application.isPlaying)
             {

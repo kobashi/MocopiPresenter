@@ -207,45 +207,29 @@ namespace Guidance.EditorTools
             deck.Note = Label(canvasRect, "Note", 80f, 40f, 80f, 770f, 66f, TMPro.TextAlignmentOptions.Center, true);
             deck.Page = Label(canvasRect, "Page", 1300f, 20f, 40f, 840f, 34f, TMPro.TextAlignmentOptions.Right, false);
             deck.Director = director;
-            deck.Guide = Object.FindFirstObjectByType<QrGuide>();
 
             // 演出用のパーティクル
             Material particle = ParticleMaterial();
             ParticleSystem sparks = Sparks(stage, particle);
             Ambient(stage, particle);
 
-            // 文字の積み木（場面の blocks で指定した文字を積む）と、アバターの当たり判定
-            var template = new GameObject("BlockTemplate");
-            template.transform.SetParent(stage, false);
-            Shape(template.transform, "Body", Vector3.zero, MeshKit.ChamferBox(Vector3.one * 0.27f, 0.028f), Lit("Block", Color.white, Color.white, 0.65f));
-            template.AddComponent<BoxCollider>();
-            Rigidbody body = template.AddComponent<Rigidbody>();
-            body.collisionDetectionMode = CollisionDetectionMode.Continuous;
-            template.AddComponent<LetterBlock>();
-            template.SetActive(false);
-
-            var blocks = new GameObject("TitleBlocks").AddComponent<TitleBlocks>();
-            blocks.transform.SetParent(stage, false);
-            blocks.Template = template;
-            blocks.Sparks = sparks;
-            blocks.Avatar = director.Avatar;
-
             // 効果音（起動時に合成する）
             new GameObject("Sfx").AddComponent<Sfx>().transform.SetParent(stage, false);
-            deck.Blocks = blocks;
 
-            // マーブルマシン（場面で machine を指定したときだけ出す）
-            deck.Machine = MarbleMachineBuilder.Build(stage, sparks, director.Avatar, particle);
-            deck.Machine.gameObject.SetActive(false);
+            // 仕掛け：[GimmickBuilder] の付いた組み立てメソッドを全部呼ぶ。どれも最初は隠しておき、場面で使うときに出す
+            var context = new GimmickContext { Stage = stage, Sparks = sparks, Particle = particle, Avatar = director.Avatar };
+            foreach (System.Reflection.MethodInfo method in TypeCache.GetMethodsWithAttribute<GimmickBuilderAttribute>())
+            {
+                var gimmick = (Gimmick)method.Invoke(null, new object[] { context });
+                if (string.IsNullOrEmpty(gimmick.Id))
+                {
+                    throw new System.InvalidOperationException(method.DeclaringType.Name + " が作った仕掛けに Id がありません");
+                }
 
-            // コーディングエージェントの場面（場面で agents を指定したときだけ出す）
-            deck.Agents = AgentSceneBuilder.Build(stage, sparks, director.Avatar, particle, deck.Body);
-            deck.Agents.gameObject.SetActive(false);
+                gimmick.gameObject.SetActive(false);
+            }
 
-            // 回転式スタンド（場面で stand を指定したときだけ出す）
-            deck.Stand = BookStandBuilder.Build(stage, sparks, deck.Body, deck.Note);
-            deck.Stand.gameObject.SetActive(false);
-
+            // アバターの手足の当たり判定（仕掛けを押したり蹴ったりできるように）
             if (avatar != null && avatar.GetComponent<AvatarColliders>() == null)
             {
                 avatar.gameObject.AddComponent<AvatarColliders>();

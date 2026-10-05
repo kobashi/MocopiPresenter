@@ -111,6 +111,7 @@ namespace Guidance
             {
                 int now = this.deck.Current;
                 string next = now + 1 < this.deck.Slides.Length ? Name(this.deck.Slides[now + 1]) : "（最後）";
+                text.AppendLine("<b>プレゼン</b>　" + this.deck.PresentationName);
                 text.AppendLine("<b>場面</b>　" + (now + 1) + " / " + this.deck.Slides.Length + "　" + Name(this.deck.Slides[now]) + "　→ 次：" + next);
             }
 

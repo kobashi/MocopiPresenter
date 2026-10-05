@@ -9,8 +9,10 @@ namespace Guidance.EditorTools
     {
         private static readonly Color Cyan = new Color(0.1f, 0.85f, 1f);
 
-        public static BookStand Build(Transform stage, ParticleSystem sparks, TMPro.TMP_Text body, TMPro.TMP_Text note)
+        [GimmickBuilder]
+        public static Gimmick Build(GimmickContext context)
         {
+            Transform stage = context.Stage;
             Transform root = new GameObject("BookStand").transform;
             root.SetParent(stage, false);
             // アバターが半歩寄って手を伸ばせば届く位置（腕を広げて立っただけでは触れない距離）
@@ -127,9 +129,8 @@ namespace Guidance.EditorTools
             stand.Drum = drum;
             stand.PanelTemplate = panel.gameObject;
             stand.Icons = new[] { sensor.gameObject, receiver.gameObject, pc.gameObject, avatar.gameObject, projector.gameObject };
-            stand.Body = body;
-            stand.Note = note;
-            stand.Sparks = sparks;
+            stand.Id = "stand";
+            stand.Sparks = context.Sparks;
             return stand;
         }
 

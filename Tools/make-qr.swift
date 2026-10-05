@@ -1,5 +1,6 @@
 // QR コード画像を作り、読み取れることを確かめる（macOS 標準の CoreImage だけを使う）。
 // 使い方: swift Tools/make-qr.swift <URL> <出力.png>
+// 例: swift Tools/make-qr.swift https://example.com Assets/StreamingAssets/Presentations/〈プレゼン名〉/qr.png
 import AppKit
 import CoreImage
 

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using TMPro;
 using UnityEngine;
@@ -6,12 +7,16 @@ using UnityEngine;
 namespace Guidance
 {
     /// <summary>
-    /// 背面スクリーンに映す場面を切り替える。内容は StreamingAssets/slides.json に書く
-    /// （ビルド後も、アプリのフォルダ内の slides.json を書き換えれば内容を変えられる）。
+    /// 背面スクリーンに映す場面を切り替え、場面ごとに仕掛け（Gimmick）を出し入れする。
+    /// 場面の並びは StreamingAssets/Presentations/〈プレゼン名〉/slides.json に書く（Presentation.cs を参照）。
+    /// ビルド後も、アプリのフォルダ内の slides.json を書き換えれば内容を変えられる。
     /// 次へ：→ / Space / PageDown、前へ：← / PageUp、最初へ：Home
     /// </summary>
     public sealed class SlideDeck : MonoBehaviour
     {
+        /// <summary>
+        /// どの場面にも共通の項目。仕掛けごとの項目は、各仕掛けが場面の JSON から自分で読む
+        /// </summary>
         [Serializable]
         public sealed class Slide
         {
@@ -23,34 +28,9 @@ namespace Guidance
             public string note = "";
             // この場面に入ったときのカメラ（1〜。0 なら変えない）
             public int camera;
-            // true なら学生用ゲームの案内（QR コード）を出す
-            public bool guide;
-            // 文字の積み木を積む（上の段から順に1行ずつ）
-            public string[] blocks = new string[0];
-            // true なら、積み木はアバターがジャンプしたときに降ってくる
-            public bool blocksOnJump;
-            // ジャンプとみなす腰の上がり幅（m）。0 なら既定値 0.12。反応しにくければ下げる
-            public float jumpHeight;
-            // 言葉の積み木を空から降らせる
-            public string[] rain = new string[0];
-            // true ならマーブルマシンを出す
-            public bool machine;
-            // コーディングエージェントの数（0 なら出さない）と、押し寄せるトラブルの名前
-            public int agents;
-            public string[] troubles = new string[0];
-            // 鞭の先がこの速さ（m/秒）を超えるとエージェントが働き出す（0 なら既定値 8）。反応しにくければ下げる
-            public float crackSpeed;
-            // 回転式スタンドに載せる項目（アイコンと名前）。全部見せ終わると note が出る
-            public BookStand.Item[] stand = new BookStand.Item[0];
+            // この場面で使う仕掛けの名前（Gimmick.Id）
+            public string[] gimmicks = new string[0];
         }
-
-        [Serializable]
-        private sealed class SlideFile
-        {
-            public Slide[] slides = new Slide[0];
-        }
-
-        public const string FileName = "slides.json";
 
         public TMP_Text Title;
         public TMP_Text Big;
@@ -58,16 +38,23 @@ namespace Guidance
         public TMP_Text Note;
         public TMP_Text Page;
         public CameraDirector Director;
-        public QrGuide Guide;
-        public TitleBlocks Blocks;
-        public MarbleMachine Machine;
-        public AgentScene Agents;
-        public BookStand Stand;
+
+        /// <summary>
+        /// 読み込んだプレゼンの名前（StreamingAssets/Presentations の下のフォルダ名）
+        /// </summary>
+        public string PresentationName { get; private set; } = "";
 
         public Slide[] Slides = new Slide[0];
         public int Current;
 
+        private readonly List<Gimmick> gimmicks = new List<Gimmick>();
+        private string[] rawSlides = new string[0];
         private bool decorated;
+
+        /// <summary>
+        /// 場面の JSON（仕掛けが自分の設定を探すときに使う）
+        /// </summary>
+        public IReadOnlyList<string> RawSlides => this.rawSlides;
 
         private void Start()
         {
@@ -92,24 +79,56 @@ namespace Guidance
         }
 
         /// <summary>
-        /// slides.json を読み込む。読めないときは、その理由をスクリーンに出す場面を1枚だけ用意する。
+        /// プレゼンを読み込む。読めないときは、その理由をスクリーンに出す場面を1枚だけ用意する。
         /// </summary>
         public void Load()
         {
-            string path = Path.Combine(Application.streamingAssetsPath, FileName);
+            this.gimmicks.Clear();
+            this.gimmicks.AddRange(FindObjectsByType<Gimmick>(FindObjectsInactive.Include, FindObjectsSortMode.None));
+
+            this.PresentationName = Presentation.Choose();
+            string path = Presentation.PathOf(this.PresentationName, Presentation.FileName);
             try
             {
-                this.Slides = JsonUtility.FromJson<SlideFile>(File.ReadAllText(path)).slides;
-                if (this.Slides == null || this.Slides.Length == 0)
+                this.rawSlides = Presentation.SplitSlides(File.ReadAllText(path));
+                if (this.rawSlides.Length == 0)
                 {
                     throw new InvalidDataException("slides が空です");
+                }
+
+                this.Slides = new Slide[this.rawSlides.Length];
+                for (int i = 0; i < this.rawSlides.Length; i++)
+                {
+                    this.Slides[i] = JsonUtility.FromJson<Slide>(this.rawSlides[i]);
                 }
             }
             catch (Exception e)
             {
                 Debug.LogException(e);
-                this.Slides = new[] { new Slide { title = FileName + " を読めません", lines = new[] { e.Message } } };
+                this.rawSlides = new[] { "{}" };
+                this.Slides = new[] { new Slide { title = path + " を読めません", lines = new[] { e.Message } } };
             }
+
+            foreach (Gimmick gimmick in this.gimmicks)
+            {
+                gimmick.OnPresentationLoaded(this);
+            }
+        }
+
+        /// <summary>
+        /// その仕掛けを使う最初の場面の JSON（無ければ null）
+        /// </summary>
+        public string FirstSlideUsing(string id)
+        {
+            for (int i = 0; i < this.Slides.Length; i++)
+            {
+                if (Array.IndexOf(this.Slides[i].gimmicks ?? new string[0], id) >= 0)
+                {
+                    return this.rawSlides[i];
+                }
+            }
+
+            return null;
         }
 
         /// <summary>
@@ -165,29 +184,23 @@ namespace Guidance
                 this.Director.Current = Mathf.Min(slide.camera, this.Director.Shots.Length) - 1;
             }
 
-            if (this.Guide != null)
+            // 使わない仕掛けを片付けてから、使う仕掛けを出す（同じ仕掛けを続けて使う場面でも、いったん片付けて出し直す）
+            string[] used = slide.gimmicks ?? new string[0];
+            foreach (Gimmick gimmick in this.gimmicks)
             {
-                this.Guide.Visible = slide.guide;
+                gimmick.Exit(this);
             }
 
-            if (this.Stand != null)
+            foreach (string id in used)
             {
-                this.Stand.Set(slide.stand, slide.note);
-            }
+                Gimmick gimmick = this.gimmicks.Find(g => g.Id == id);
+                if (gimmick == null)
+                {
+                    Debug.LogWarning("仕掛け「" + id + "」が見つかりません（場面 " + (this.Current + 1) + "）");
+                    continue;
+                }
 
-            if (this.Agents != null)
-            {
-                this.Agents.Set(slide.agents, slide.troubles, slide.crackSpeed);
-            }
-
-            if (this.Machine != null)
-            {
-                this.Machine.gameObject.SetActive(slide.machine);
-            }
-
-            if (this.Blocks != null)
-            {
-                this.Blocks.Set(slide.blocks, slide.rain, slide.blocksOnJump, slide.jumpHeight, Application.isPlaying);
+                gimmick.Enter(this.rawSlides[this.Current], this);
             }
         }
     }

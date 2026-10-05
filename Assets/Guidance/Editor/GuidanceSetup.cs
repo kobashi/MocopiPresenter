@@ -14,7 +14,6 @@ namespace Guidance.EditorTools
     {
         private const string SampleScenePath = "Assets/MocopiReceiver/Samples/ReceiverSample/Scenes/ReceiverSample.unity";
         private const string ScenePath = "Assets/Guidance/Scenes/Guidance.unity";
-        private const string QrPath = "Assets/Guidance/Textures/GameQr.png";
         // Sony 配布の RAYNOS（再配布禁止のため Git 管理外）。無ければサンプルアバターのまま使う
         private const string AvatarVrmPath = "Assets/Guidance/Avatars/RAYNOS/RAYNOS-chan_1.0.6.vrm";
         private const string AvatarPrefabPath = "Assets/Guidance/Avatars/RAYNOS/RAYNOS-chan_1.0.6.prefab";
@@ -101,17 +100,10 @@ namespace Guidance.EditorTools
             var hud = new GameObject("ConnectionHud").AddComponent<ConnectionHud>();
             hud.Receiver = receiver;
 
-            var importer = (TextureImporter)AssetImporter.GetAtPath(QrPath);
-            importer.filterMode = FilterMode.Point;
-            importer.mipmapEnabled = false;
-            importer.textureCompression = TextureImporterCompression.Uncompressed;
-            importer.npotScale = TextureImporterNPOTScale.None;
-            importer.SaveAndReimport();
-
+            // QR コードの案内（場面の "gimmicks" に "qr" と書くと出る。文言と画像はプレゼンのフォルダから読む）
             var guide = new GameObject("QrGuide").AddComponent<QrGuide>();
-            guide.QrCode = AssetDatabase.LoadAssetAtPath<Texture2D>(QrPath);
+            guide.Id = "qr";
             guide.gameObject.AddComponent<ScreenshotOption>().Guide = guide;
-            Object.FindFirstObjectByType<SlideDeck>().Guide = guide;
 
             EditorSceneManager.MarkSceneDirty(hud.gameObject.scene);
             EditorSceneManager.SaveOpenScenes();
