@@ -87,7 +87,7 @@ Assets/
 | `qr` | QrGuide | `qr`（`title` `caption` `heading` `steps` `image`） | Q |
 | `headset` | HeadsetView | `headset`（`eyeGap` `follow` `keyTurn`） | C / A / D |
 | `tracking` | OutsideInTracking | `tracking`（`cameras` `coordinates`） | G |
-| `insideout` | InsideOutScan | `scan`（`cameraWidth` `cameraHeight` `rays` `scanWidth` `scanUp` `scanDown` `sweepsPerSecond` `pointsPerSecond` `pointLife` `beamWidth` `range` `keyTurn`） | C / A / D / L |
+| `insideout` | InsideOutScan | `scan`（`cameraWidth` `cameraHeight` `cameraTilt` `rays` `scanWidth` `scanUp` `scanDown` `sweepsPerSecond` `pointsPerSecond` `pointLife` `beamWidth` `range` `keyTurn`） | C / A / D / L |
 | `vrmr` | VrMrSwitch | `mixed`（`start` `handsUp` `hold` `wipe` `video` `video360` `videoYaw`） | X / C |
 | `anchors` | SpatialAnchors | `anchors`（`pointsPerSecond` `pointsForPlane` `pointsForFurniture` `view` `range` `handUp` `hold` `keyTurn`） | K / L / C / A / D |
 | `apps` | AppShowcase | `apps`（`icon` と `label` の配列） | Y |
@@ -105,7 +105,7 @@ Assets/
    - `OnExit(deck)`：場面から出たとき。作ったものを片付ける。
    - スクリーンの文字を使うなら `deck.Body` / `deck.Note` に書く。
    - 効果音は `Sfx.Play("名前")`、火花は `Sparks.Emit(...)`。足りない効果音は `Sfx.Define()` に1行足す。
-   - アバターの手足の当たりは `AvatarColliders.Part`（`Hand` なら手・前腕）で見分ける。
+   - アバターの手足の当たりは `AvatarColliders.Part`（`Hand` なら手・前腕）で見分ける。手と前腕の当たりは触れやすいよう実際より大きい（`AvatarColliders.HandRadius` 0.16m / `ForearmRadius` 0.1m。変えたらシーンを作り直す）。
    - 体の動きへの反応しやすさ（しきい値）は、場面の項目で上書きできるようにしておく（実機で調整するため）。
    - キー操作による代わりの操作を必ず用意する（体の動きで反応しなかったときの保険）。
 2. `Editor/` に組み立てメソッドを作り、`[GimmickBuilder]` を付ける。形は `StageBuilder.Box` / `Column` / `Shape`（面取り済み）と `Glow` / `Lit` / `Metal` の素材を使う。`Id` を必ず設定する。

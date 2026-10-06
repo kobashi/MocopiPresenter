@@ -153,10 +153,10 @@ namespace Guidance.EditorTools
             scan.Avatar = context.Avatar;
             scan.HeadGoggle = HeadGoggle(root);
 
-            // カメラの視野（四角すい）。大きさは実行時に設定の角度に合わせず、既定の角度で作る
+            // カメラの視野（四角すい）。縦横 90° で作り、実行時に設定の角度に合わせて横と縦に伸ばす
             Transform frustum = new GameObject("CameraView").transform;
             frustum.SetParent(root, false);
-            Frustum(frustum, 100f, 80f, 0.4f, 0.005f, magenta);
+            Frustum(frustum, 90f, 90f, 0.3f, 0.004f, magenta);
             scan.Frustum = frustum;
 
             scan.Points = PointCloud(root, "LidarPoints", 0.05f, 40000);

@@ -24,8 +24,10 @@ namespace Guidance
         private sealed class Scan
         {
             // ゴーグルのカメラの視野（左右・上下の角度）
-            public float cameraWidth = 100f;
-            public float cameraHeight = 80f;
+            public float cameraWidth = 140f;
+            public float cameraHeight = 110f;
+            // ゴーグルのカメラを顔の向きからどれだけ下に向けるか（度）。手元や足元が写るように斜め下を向いている
+            public float cameraTilt = 25f;
             // LiDAR の線の本数（1回に振る扇の線の数）と、1秒に何回振るか
             public int rays = 40;
             // LiDAR の扇の広さ（左右の角度）と、上下に振る範囲（下向きが正）
@@ -256,9 +258,12 @@ namespace Guidance
 
             Vector3 eye = this.pose.Eye;
             Quaternion facing = this.Facing;
-            this.Frustum.SetPositionAndRotation(eye, facing);
+            // カメラの視野は顔の向きより少し下向き。四角すいの形も設定の角度に合わせる（作るときは縦横とも 90° で作ってある）
+            Quaternion camera = facing * Quaternion.Euler(this.settings.cameraTilt, 0f, 0f);
+            this.Frustum.SetPositionAndRotation(eye, camera);
+            this.Frustum.localScale = new Vector3(Mathf.Tan(this.settings.cameraWidth * 0.5f * Mathf.Deg2Rad), Mathf.Tan(this.settings.cameraHeight * 0.5f * Mathf.Deg2Rad), 1f);
             this.Sweep(eye, facing);
-            this.TrackHands(eye, facing);
+            this.TrackHands(eye, camera);
             this.ShowStatus();
         }
 

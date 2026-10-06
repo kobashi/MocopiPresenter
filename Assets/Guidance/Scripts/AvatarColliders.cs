@@ -18,6 +18,10 @@ namespace Guidance
             public bool Hand;
         }
 
+        // 手と前腕の当たりの半径（m）。実際の手より大きめにして、仕掛けに触れやすくしている
+        public float HandRadius = 0.16f;
+        public float ForearmRadius = 0.1f;
+
         private readonly List<(Rigidbody body, Transform a, Transform b)> parts = new List<(Rigidbody, Transform, Transform)>();
 
         private void Start()
@@ -58,10 +62,10 @@ namespace Guidance
             Add(HumanBodyBones.RightLowerLeg, HumanBodyBones.RightFoot, 0.09f);
             Add(HumanBodyBones.LeftUpperLeg, HumanBodyBones.LeftLowerLeg, 0.11f);
             Add(HumanBodyBones.RightUpperLeg, HumanBodyBones.RightLowerLeg, 0.11f);
-            Add(HumanBodyBones.LeftHand, HumanBodyBones.LeftHand, 0.1f);
-            Add(HumanBodyBones.RightHand, HumanBodyBones.RightHand, 0.1f);
-            Add(HumanBodyBones.LeftLowerArm, HumanBodyBones.LeftHand, 0.07f);
-            Add(HumanBodyBones.RightLowerArm, HumanBodyBones.RightHand, 0.07f);
+            Add(HumanBodyBones.LeftHand, HumanBodyBones.LeftHand, this.HandRadius);
+            Add(HumanBodyBones.RightHand, HumanBodyBones.RightHand, this.HandRadius);
+            Add(HumanBodyBones.LeftLowerArm, HumanBodyBones.LeftHand, this.ForearmRadius);
+            Add(HumanBodyBones.RightLowerArm, HumanBodyBones.RightHand, this.ForearmRadius);
             Add(HumanBodyBones.Hips, HumanBodyBones.Hips, 0.17f);
             Add(HumanBodyBones.Chest, HumanBodyBones.Chest, 0.16f);
             Add(HumanBodyBones.Head, HumanBodyBones.Head, 0.14f);
