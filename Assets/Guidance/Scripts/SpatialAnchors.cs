@@ -7,7 +7,8 @@ namespace Guidance
     /// <summary>
     /// 空間アンカーの仕組みを見せる仕掛け。
     /// 1. アバターの顔が向いている所に、ゴーグルのカメラが見つけた「特徴点」（黄色い点）がたまっていく。
-    /// 2. 同じ面の上に点が十分たまると、その面を「水平な面（床や机）」や「垂直な面（壁）」として見つけ、水色の格子で示す。
+    /// 2. 同じ面の上に点が十分たまると、その面を床（緑の格子）や壁（水色の格子）として見つける。
+    ///    家具（机・箱・いす）に点がたまると、家具として見つけ、黄色い箱の枠で囲んで名前を出す。
     /// 3. 見つけた面の上に仮想の物を置く（床には床に置く物、壁には壁に掛ける物）。置いた物には「アンカー」の印が付き、
     ///    アバターが動いても、その場所に固定されたまま残る。
     /// 面を見つけると、最初の1個は自動で置く。そのあとは、片手を頭より上に上げると、顔の向いている面に物を置く（K キーでも置ける）。
@@ -25,11 +26,13 @@ namespace Guidance
         private sealed class Anchors
         {
             // 1秒に見つける特徴点の数
-            public float pointsPerSecond = 40f;
+            public float pointsPerSecond = 120f;
             // 面として見つけるのに要る点の数
             public int pointsForPlane = 25;
+            // 家具として見つけるのに要る点の数
+            public int pointsForFurniture = 8;
             // ゴーグルのカメラの視野（度）
-            public float view = 70f;
+            public float view = 100f;
             // 特徴点を見つける距離（m）。床の点が遠くまで散らばらないように
             public float range = 4.5f;
             // 片手を頭よりどれだけ上に上げたら置くか（m）と、その姿勢を続ける秒数
@@ -57,12 +60,16 @@ namespace Guidance
         public GameObject[] FloorItems = new GameObject[0];
         public GameObject[] WallItems = new GameObject[0];
         public GameObject PinTemplate;
+        // 家具を囲む枠の線の素材
+        public Material BoxMaterial;
         // 特徴点が見つかる物（壁など）。場面に出ている間だけ置く
         public GameObject Room;
         public ParticleSystem Sparks;
 
         private readonly Dictionary<Collider, Plane> planes = new Dictionary<Collider, Plane>();
         private readonly List<GameObject> placed = new List<GameObject>();
+        private readonly Dictionary<Furniture, int> furniturePoints = new Dictionary<Furniture, int>();
+        private readonly List<GameObject> boxes = new List<GameObject>();
         private Anchors settings = new Anchors();
         private HeadPose pose;
         private SlideDeck deck;
@@ -82,6 +89,8 @@ namespace Guidance
         public int WallsFound { get; private set; }
 
         public int PlacedCount => this.placed.Count;
+
+        public int FurnitureFound => this.boxes.Count;
 
         protected override void OnEnter(string json, SlideDeck deck)
         {
@@ -125,6 +134,13 @@ namespace Guidance
             }
 
             this.placed.Clear();
+            foreach (GameObject box in this.boxes)
+            {
+                Destroy(box);
+            }
+
+            this.boxes.Clear();
+            this.furniturePoints.Clear();
             this.PointCount = 0;
             this.FloorsFound = 0;
             this.WallsFound = 0;
@@ -150,11 +166,21 @@ namespace Guidance
         {
             Vector3 eye = this.pose.Eye;
             Vector3 forward = this.Facing * Vector3.forward;
-            if (Physics.Raycast(eye, forward, out RaycastHit hit, 12f, ~0, QueryTriggerInteraction.Ignore)
-                && this.planes.TryGetValue(hit.collider, out Plane plane) && plane.Found)
+            if (Physics.Raycast(eye, forward, out RaycastHit hit, 12f, ~0, QueryTriggerInteraction.Ignore))
             {
-                this.Place(plane, hit.point);
-                return true;
+                Furniture furniture = hit.collider.GetComponentInParent<Furniture>();
+                if (furniture != null && hit.normal.y > 0.8f && this.furniturePoints.TryGetValue(furniture, out int count) && count >= this.settings.pointsForFurniture)
+                {
+                    // 見つけた家具の上面なら、その上に置く
+                    this.Place(true, hit.point, Vector3.up);
+                    return true;
+                }
+
+                if (this.planes.TryGetValue(hit.collider, out Plane plane) && plane.Found)
+                {
+                    this.Place(plane, hit.point);
+                    return true;
+                }
             }
 
             // 見つけた面の中から、顔の向きに一番近い所を探す
@@ -271,11 +297,18 @@ namespace Guidance
             while (this.pending >= 1f)
             {
                 this.pending -= 1f;
-                // 下向き寄りに散らす（床と、目の高さの壁が入るように）
-                Vector3 direction = facing * Quaternion.Euler(Random.Range(-half * 0.6f, half * 1.1f), Random.Range(-half, half), 0f) * Vector3.forward;
+                // 下向き寄りに散らす（足元の床や家具と、目の高さの壁が入るように）
+                Vector3 direction = facing * Quaternion.Euler(Random.Range(-half * 0.3f, half * 1.3f), Random.Range(-half, half), 0f) * Vector3.forward;
                 if (!Physics.Raycast(eye, direction, out RaycastHit hit, this.settings.range, ~0, QueryTriggerInteraction.Ignore)
                     || hit.collider.GetComponent<AvatarColliders.Part>() != null)
                 {
+                    continue;
+                }
+
+                Furniture furniture = hit.collider.GetComponentInParent<Furniture>();
+                if (furniture != null)
+                {
+                    this.FurniturePoint(furniture, hit);
                     continue;
                 }
 
@@ -286,7 +319,7 @@ namespace Guidance
                     continue;
                 }
 
-                this.FeaturePoints.Emit(new ParticleSystem.EmitParams { position = hit.point + hit.normal * 0.01f, startColor = new Color(1f, 0.85f, 0.2f) }, 1);
+                this.FeaturePoints.Emit(new ParticleSystem.EmitParams { position = hit.point + hit.normal * 0.015f, startColor = floor ? FloorColor : WallColor }, 1);
                 this.PointCount++;
 
                 if (!this.planes.TryGetValue(hit.collider, out Plane plane))
@@ -307,6 +340,70 @@ namespace Guidance
             }
         }
 
+        private static readonly Color FloorColor = new Color(0.35f, 1f, 0.45f);
+        private static readonly Color WallColor = new Color(0.1f, 0.85f, 1f);
+        private static readonly Color FurnitureColor = new Color(1f, 0.8f, 0.15f);
+
+        /// <summary>
+        /// 家具に当たった点を数え、十分たまったら家具として見つけて箱の枠で囲む
+        /// </summary>
+        private void FurniturePoint(Furniture furniture, RaycastHit hit)
+        {
+            this.FeaturePoints.Emit(new ParticleSystem.EmitParams { position = hit.point + hit.normal * 0.015f, startColor = FurnitureColor }, 1);
+            this.PointCount++;
+            this.furniturePoints.TryGetValue(furniture, out int count);
+            this.furniturePoints[furniture] = ++count;
+            if (count == this.settings.pointsForFurniture)
+            {
+                this.Enclose(furniture);
+            }
+        }
+
+        /// <summary>
+        /// 家具を囲む箱の枠と名前を出す
+        /// </summary>
+        private void Enclose(Furniture furniture)
+        {
+            Bounds bounds = furniture.Bounds;
+            bounds.Expand(0.04f);
+            Vector3 a = bounds.min;
+            Vector3 b = bounds.max;
+            var root = new GameObject("FurnitureBox " + furniture.Label);
+            root.transform.SetParent(this.transform, false);
+
+            // 12本の辺を、一筆書き（同じ辺を少しなぞり直す）でつなぐ
+            Vector3[] path =
+            {
+                new Vector3(a.x, a.y, a.z), new Vector3(b.x, a.y, a.z), new Vector3(b.x, a.y, b.z), new Vector3(a.x, a.y, b.z), new Vector3(a.x, a.y, a.z),
+                new Vector3(a.x, b.y, a.z), new Vector3(b.x, b.y, a.z), new Vector3(b.x, b.y, b.z), new Vector3(a.x, b.y, b.z), new Vector3(a.x, b.y, a.z),
+                new Vector3(b.x, b.y, a.z), new Vector3(b.x, a.y, a.z), new Vector3(b.x, a.y, b.z), new Vector3(b.x, b.y, b.z), new Vector3(a.x, b.y, b.z), new Vector3(a.x, a.y, b.z),
+            };
+            LineRenderer line = root.AddComponent<LineRenderer>();
+            line.sharedMaterial = this.BoxMaterial;
+            line.positionCount = path.Length;
+            line.SetPositions(path);
+            line.widthMultiplier = 0.018f;
+            line.startColor = FurnitureColor;
+            line.endColor = FurnitureColor;
+            line.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+
+            var label = new GameObject("Label", typeof(TMPro.TextMeshPro)).GetComponent<TMPro.TextMeshPro>();
+            label.transform.SetParent(root.transform, false);
+            // 名前は家具の上、客席側の角に出す（重なった家具の名前が隠れないように）
+            label.transform.position = new Vector3(b.x - 0.1f, b.y + 0.1f, b.z);
+            // 客席（+Z）から読めるように
+            label.transform.rotation = Quaternion.Euler(0f, 180f, 0f);
+            label.rectTransform.sizeDelta = new Vector2(0.8f, 0.16f);
+            label.alignment = TMPro.TextAlignmentOptions.Center;
+            label.fontSize = 1.0f;
+            label.text = furniture.Label;
+            JapaneseFont.Style(label, "label", Color.white, FurnitureColor);
+
+            this.boxes.Add(root);
+            Sfx.Play("pickup", 1.1f);
+            this.Burst(bounds.center, 50, FurnitureColor);
+        }
+
         private void Found(Plane plane)
         {
             plane.Found = true;
@@ -321,6 +418,9 @@ namespace Guidance
 
             plane.Grid = Instantiate(this.GridTemplate, this.transform).transform;
             plane.Grid.gameObject.SetActive(true);
+            // 床は緑、壁は水色（舞台の床の水色の線と見分けられるように）
+            Color tint = plane.Floor ? FloorColor : WallColor;
+            plane.Grid.GetComponent<Renderer>().material.SetColor("_TintColor", new Color(tint.r * 0.5f, tint.g * 0.5f, tint.b * 0.5f, 0.5f));
             this.FitGrid(plane);
             Sfx.Play("coin");
             this.Burst(plane.Grid.position, 60, new Color(0.1f, 0.85f, 1f));
@@ -378,31 +478,41 @@ namespace Guidance
             Vector2 size = Vector2.Max(max - min, Vector2.one * 0.3f) + Vector2.one * 0.15f;
             plane.Grid.SetPositionAndRotation(rotation * new Vector3(middle.x, middle.y, depth) + plane.Normal * 0.015f, rotation);
             plane.Grid.localScale = new Vector3(size.x, size.y, 1f);
+            // 格子のます目は 0.5m のまま、面の大きさに合わせて数を増やす
+            plane.Grid.GetComponent<Renderer>().material.mainTextureScale = size / 0.5f;
         }
 
         private void Place(Plane plane, Vector3 point)
         {
-            GameObject[] items = plane.Floor ? this.FloorItems : this.WallItems;
+            this.Place(plane.Floor, point, plane.Normal);
+            plane.Placed++;
+        }
+
+        /// <summary>
+        /// 物を置く。floor が true なら床に置く物（上向きの面）、false なら壁に掛ける物
+        /// </summary>
+        private void Place(bool floor, Vector3 point, Vector3 normal)
+        {
+            GameObject[] items = floor ? this.FloorItems : this.WallItems;
             if (items.Length == 0)
             {
                 return;
             }
 
-            int index = plane.Floor ? this.floorIndex++ : this.wallIndex++;
+            int index = floor ? this.floorIndex++ : this.wallIndex++;
             GameObject item = Instantiate(items[index % items.Length], this.transform);
             // 床の物は顔の方を向け、壁の物は壁に沿わせる
             Vector3 toEye = this.pose.Eye - point;
             toEye.y = 0f;
-            Quaternion rotation = plane.Floor
+            Quaternion rotation = floor
                 ? Quaternion.LookRotation(toEye.sqrMagnitude > 0.01f ? toEye.normalized : Vector3.forward, Vector3.up)
-                : Quaternion.LookRotation(plane.Normal, Vector3.up);
+                : Quaternion.LookRotation(normal, Vector3.up);
             item.transform.SetPositionAndRotation(point, rotation);
             item.SetActive(true);
 
             GameObject pin = Instantiate(this.PinTemplate, item.transform);
             pin.SetActive(true);
             this.placed.Add(item);
-            plane.Placed++;
             Sfx.Play("land", 1.2f);
             this.Burst(point, 40, new Color(1f, 0.25f, 0.7f));
             this.StartCoroutine(this.Pop(item.transform));
@@ -430,7 +540,7 @@ namespace Guidance
                 return;
             }
 
-            string status = "特徴点 " + (this.PointCount / 10 * 10) + "　面：水平 " + this.FloorsFound + "・垂直 " + this.WallsFound + "　置いた物 " + this.placed.Count;
+            string status = "特徴点 " + (this.PointCount / 10 * 10) + "　床 " + this.FloorsFound + "・壁 " + this.WallsFound + "・家具 " + this.boxes.Count + "　置いた物 " + this.placed.Count;
             if (status == this.lastStatus)
             {
                 return;

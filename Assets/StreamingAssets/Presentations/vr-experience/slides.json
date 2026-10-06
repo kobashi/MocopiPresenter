@@ -3,9 +3,6 @@
   "slides": [
     {
       "big": "VR体験会",
-      "lines": [
-        "（仮）サブタイトル・日付"
-      ],
       "gimmicks": [
         "blocks"
       ],
@@ -13,7 +10,8 @@
         "VR",
         "体験会"
       ],
-      "blocksOnJump": true
+      "blocksOnJump": true,
+      "blocksVertical": true
     },
     {
       "title": "アバターはこうして動いている",
@@ -41,7 +39,8 @@
           "icon": "projector",
           "label": "プロジェクター"
         }
-      ]
+      ],
+      "standScale": 1.8
     },
     {
       "title": "ヘッドトラッキングとカメラ",
@@ -93,7 +92,10 @@
         "vrmr"
       ],
       "mixed": {
-        "start": "MR"
+        "start": "MR",
+        "video": "mr-background.mp4",
+        "video360": true,
+        "videoYaw": 0
       }
     },
     {

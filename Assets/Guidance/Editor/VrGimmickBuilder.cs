@@ -159,7 +159,7 @@ namespace Guidance.EditorTools
             Frustum(frustum, 100f, 80f, 0.4f, 0.005f, magenta);
             scan.Frustum = frustum;
 
-            scan.Points = PointCloud(root, "LidarPoints", 0.03f, 40000);
+            scan.Points = PointCloud(root, "LidarPoints", 0.05f, 40000);
             scan.BeamMaterial = BeamMaterial();
             scan.HandSeen = StageBuilder.Glow("GlowGreen", Green, 2.2f);
             scan.HandLost = StageBuilder.Glow("GlowRed", Red, 2.2f);
@@ -201,14 +201,34 @@ namespace Guidance.EditorTools
             TMP_Text label = Text(panel, "Mode", new Vector3(-width * 0.5f - 0.4f, 0.1f, 0f), new Vector2(0.6f, 0.3f), 2.2f, TextAlignmentOptions.Center);
             TMP_Text caption = Text(panel, "Caption", new Vector3(0f, -height * 0.5f - 0.17f, 0f), new Vector2(width, 0.16f), 0.9f, TextAlignmentOptions.Center);
 
-            // 現実の舞台を写すカメラ（ゴーグルのカメラ）
+            // 現実の景色（教室）。動画が無いときに写す。舞台のずっと下に置く
+            Transform classroom = new GameObject("Classroom").transform;
+            classroom.SetParent(root, false);
+            classroom.localPosition = new Vector3(0f, -900f, 0f);
+            Classroom(classroom);
+            Camera passthrough = EyeCamera("PassthroughEye", classroom, 70f);
+            passthrough.backgroundColor = new Color(0.05f, 0.05f, 0.06f);
+            passthrough.depth = -12f;
+            passthrough.enabled = false;
+            // 360度動画を貼る背景（動画のときだけ使う）
+            Material panoramaMaterial = StageBuilder.LoadOrCreate("MrPanorama", "Skybox/Panoramic");
+            panoramaMaterial.SetFloat("_Mapping", 1f);
+            panoramaMaterial.SetFloat("_ImageType", 0f);
+            panoramaMaterial.EnableKeyword("_MAPPING_LATITUDE_LONGITUDE_LAYOUT");
+            panoramaMaterial.DisableKeyword("_MAPPING_6_FRAMES_LAYOUT");
+            Skybox panorama = passthrough.gameObject.AddComponent<Skybox>();
+            panorama.material = panoramaMaterial;
+            panorama.enabled = false;
+
+            // 仮想の物だけを写し、現実の景色の上に重ねるカメラ（ゴーグルを付けた人の目の位置に置く）
             Camera real = new GameObject("RealEye").AddComponent<Camera>();
             real.transform.SetParent(root, false);
             real.fieldOfView = 70f;
             real.nearClipPlane = 0.12f;
             real.farClipPlane = 30f;
-            real.clearFlags = CameraClearFlags.SolidColor;
-            real.backgroundColor = new Color(0.02f, 0.03f, 0.08f);
+            real.clearFlags = CameraClearFlags.Depth;
+            real.cullingMask = 1 << VrMrSwitch.VirtualLayer;
+            real.depth = -11f;
             real.enabled = false;
 
             // 仮想の世界と、そこを写すカメラ
@@ -266,6 +286,9 @@ namespace Guidance.EditorTools
             mixed.Avatar = context.Avatar;
             mixed.HeadGoggle = HeadGoggle(root);
             mixed.RealEye = real;
+            mixed.PassthroughEye = passthrough;
+            mixed.Panorama = panorama;
+            mixed.ClassroomOrigin = classroom;
             mixed.VirtualEye = virtualEye;
             mixed.VirtualOrigin = world;
             mixed.Overlay = overlay.gameObject;
@@ -293,9 +316,10 @@ namespace Guidance.EditorTools
             anchors.Id = "anchors";
             anchors.Avatar = context.Avatar;
             anchors.HeadGoggle = HeadGoggle(root);
-            anchors.FeaturePoints = PointCloud(root, "FeaturePoints", 0.04f, 20000);
-            // 壁は舞台のスクリーン（当たり判定あり）、床は舞台の床を使う
-            anchors.Room = Template(root, "AnchorRoom").gameObject;
+            anchors.FeaturePoints = PointCloud(root, "FeaturePoints", 0.06f, 20000);
+            // 壁は舞台のスクリーン（当たり判定あり）、床は舞台の床を使う。家具（机・箱・いす）は場面に出ている間だけ置く
+            anchors.Room = Room(root, "AnchorRoom");
+            anchors.BoxMaterial = BeamMaterial();
             anchors.Sparks = context.Sparks;
 
             // 見つけた面を示す格子
@@ -502,6 +526,97 @@ namespace Guidance.EditorTools
             }
         }
 
+        /// <summary>
+        /// 教室（MR の現実の景色の代わり）。原点が先生の立ち位置で、+Z に生徒の机が並ぶ。後ろ（-Z）にホワイトボード
+        /// </summary>
+        private static void Classroom(Transform parent)
+        {
+            Material floor = StageBuilder.Lit("RoomFloor", new Color(0.62f, 0.48f, 0.32f), Color.black, 0.35f);
+            Material wall = StageBuilder.Lit("RoomWall", new Color(0.88f, 0.87f, 0.83f), Color.black, 0.1f);
+            Material ceiling = StageBuilder.Lit("RoomCeiling", new Color(0.95f, 0.95f, 0.95f), Color.black, 0.1f);
+            Material board = StageBuilder.Lit("RoomBoard", new Color(0.97f, 0.98f, 0.98f), Color.black, 0.8f);
+            Material frame = StageBuilder.Lit("RoomFrame", new Color(0.55f, 0.57f, 0.6f), Color.black, 0.6f);
+            Material desk = StageBuilder.Lit("RoomDesk", new Color(0.8f, 0.68f, 0.5f), Color.black, 0.4f);
+            Material steel = StageBuilder.Lit("RoomSteel", new Color(0.35f, 0.36f, 0.4f), Color.black, 0.6f);
+            Material chair = StageBuilder.Lit("RoomChair", new Color(0.25f, 0.4f, 0.6f), Color.black, 0.3f);
+            Material window = StageBuilder.Glow("RoomWindow", new Color(0.75f, 0.88f, 1f), 1.15f);
+            Material light = StageBuilder.Glow("RoomLight", new Color(1f, 0.98f, 0.92f), 1.3f);
+            Material green = StageBuilder.Lit("RoomBoardGreen", new Color(0.2f, 0.35f, 0.3f), Color.black, 0.3f);
+            Material ink = StageBuilder.Lit("RoomInk", new Color(0.15f, 0.25f, 0.6f), Color.black, 0.3f);
+
+            const float w = 9f;
+            const float d = 9f;
+            const float h = 3f;
+            const float front = -2.2f;
+            StageBuilder.Box(parent, "Floor", new Vector3(0f, -0.05f, front + d * 0.5f), new Vector3(w, 0.1f, d), floor, 0.01f);
+            StageBuilder.Box(parent, "Ceiling", new Vector3(0f, h + 0.05f, front + d * 0.5f), new Vector3(w, 0.1f, d), ceiling, 0.01f);
+            StageBuilder.Box(parent, "WallFront", new Vector3(0f, h * 0.5f, front - 0.05f), new Vector3(w, h, 0.1f), wall, 0.01f);
+            StageBuilder.Box(parent, "WallBack", new Vector3(0f, h * 0.5f, front + d + 0.05f), new Vector3(w, h, 0.1f), wall, 0.01f);
+            StageBuilder.Box(parent, "WallLeft", new Vector3(-w * 0.5f - 0.05f, h * 0.5f, front + d * 0.5f), new Vector3(0.1f, h, d), wall, 0.01f);
+
+            // 窓のある壁（+X）：腰壁、窓ガラス、窓枠
+            StageBuilder.Box(parent, "WallRightLow", new Vector3(w * 0.5f + 0.05f, 0.45f, front + d * 0.5f), new Vector3(0.1f, 0.9f, d), wall, 0.01f);
+            StageBuilder.Box(parent, "WallRightTop", new Vector3(w * 0.5f + 0.05f, h - 0.2f, front + d * 0.5f), new Vector3(0.1f, 0.4f, d), wall, 0.01f);
+            StageBuilder.Box(parent, "Glass", new Vector3(w * 0.5f + 0.08f, 1.7f, front + d * 0.5f), new Vector3(0.02f, 1.6f, d), window, 0.002f);
+            for (int i = 0; i <= 6; i++)
+            {
+                StageBuilder.Box(parent, "Mullion" + i, new Vector3(w * 0.5f, 1.7f, front + i * d / 6f), new Vector3(0.08f, 1.6f, 0.08f), frame, 0.01f);
+            }
+
+            StageBuilder.Box(parent, "Sill", new Vector3(w * 0.5f - 0.05f, 0.92f, front + d * 0.5f), new Vector3(0.2f, 0.04f, d), frame, 0.01f);
+
+            // 前の壁：ホワイトボードと、書かれた線
+            StageBuilder.Box(parent, "Board", new Vector3(0f, 1.6f, front + 0.03f), new Vector3(4.2f, 1.3f, 0.04f), board, 0.01f);
+            StageBuilder.Box(parent, "BoardFrame", new Vector3(0f, 0.92f, front + 0.08f), new Vector3(4.3f, 0.06f, 0.12f), frame, 0.01f);
+            for (int i = 0; i < 4; i++)
+            {
+                StageBuilder.Box(parent, "Writing" + i, new Vector3(-1.2f + (i % 2) * 0.3f, 2.0f - i * 0.22f, front + 0.055f), new Vector3(1.4f - i * 0.2f, 0.04f, 0.005f), ink, 0.002f);
+            }
+
+            // 後ろの壁：掲示板と時計
+            StageBuilder.Box(parent, "Notice", new Vector3(-2f, 1.6f, front + d - 0.03f), new Vector3(2.4f, 1f, 0.04f), green, 0.01f);
+            Transform clock = new GameObject("Clock").transform;
+            clock.SetParent(parent, false);
+            clock.localPosition = new Vector3(1.5f, 2.3f, front + d - 0.04f);
+            StageBuilder.Column(clock, "Face", Vector3.zero, 32, 0.22f, 0.04f, board, 0.01f).transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+            GameObject hand = StageBuilder.Box(clock, "Second", new Vector3(0f, 0f, -0.03f), new Vector3(0.01f, 0.36f, 0.005f), steel, 0.002f);
+            Spin(hand, new Vector3(0f, 0f, -6f), 0f);
+
+            // 天井の明かり
+            for (int row = 0; row < 3; row++)
+            {
+                foreach (float x in new[] { -2.2f, 0f, 2.2f })
+                {
+                    StageBuilder.Box(parent, "Light", new Vector3(x, h - 0.03f, front + 1.6f + row * 2.6f), new Vector3(1.2f, 0.04f, 0.25f), light, 0.005f);
+                }
+            }
+
+            // 生徒の机といす（4列×4行）。先生の方（-Z）を向いている
+            for (int row = 0; row < 4; row++)
+            {
+                for (int col = 0; col < 4; col++)
+                {
+                    Vector3 at = new Vector3(-2.7f + col * 1.8f, 0f, 1.6f + row * 1.4f);
+                    StageBuilder.Box(parent, "Desk", at + new Vector3(0f, 0.72f, 0f), new Vector3(0.65f, 0.04f, 0.45f), desk, 0.01f);
+                    StageBuilder.Box(parent, "DeskBody", at + new Vector3(0f, 0.6f, 0.02f), new Vector3(0.6f, 0.18f, 0.38f), steel, 0.01f);
+                    foreach (float sx in new[] { -1f, 1f })
+                    {
+                        StageBuilder.Box(parent, "DeskLeg", at + new Vector3(sx * 0.28f, 0.26f, 0f), new Vector3(0.03f, 0.52f, 0.35f), steel, 0.005f);
+                    }
+
+                    StageBuilder.Box(parent, "Seat", at + new Vector3(0f, 0.44f, 0.45f), new Vector3(0.4f, 0.04f, 0.38f), chair, 0.01f);
+                    StageBuilder.Box(parent, "Back", at + new Vector3(0f, 0.7f, 0.64f), new Vector3(0.4f, 0.35f, 0.03f), chair, 0.01f);
+                    StageBuilder.Box(parent, "ChairLeg", at + new Vector3(0f, 0.21f, 0.45f), new Vector3(0.36f, 0.42f, 0.03f), steel, 0.005f);
+                }
+            }
+
+            // 教室の中は、天井や壁が影を落とさないようにする（暗くならないように）
+            foreach (Renderer part in parent.GetComponentsInChildren<Renderer>())
+            {
+                part.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            }
+        }
+
         private static Camera EyeCamera(string name, Transform parent, float fieldOfView)
         {
             Camera camera = new GameObject(name).AddComponent<Camera>();
@@ -674,8 +789,25 @@ namespace Guidance.EditorTools
         /// </summary>
         private static Material PointMaterial()
         {
+            // 縁のくっきりした丸（中心ほど明るい）。ぼやけた光の粒より、測った「点」に見えるように
+            const string path = "Assets/Guidance/Stage/PointDot.png";
+            const int size = 64;
+            var texture = new Texture2D(size, size, TextureFormat.RGBA32, false);
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    float d = Vector2.Distance(new Vector2(x, y), Vector2.one * (size - 1) * 0.5f) / (size * 0.5f);
+                    float v = Mathf.Clamp01((0.85f - d) / 0.08f) * Mathf.Lerp(1f, 0.75f, d);
+                    texture.SetPixel(x, y, new Color(v, v, v, 1f));
+                }
+            }
+
+            File.WriteAllBytes(path, texture.EncodeToPNG());
+            Object.DestroyImmediate(texture);
+            AssetDatabase.ImportAsset(path);
             Material material = StageBuilder.LoadOrCreate("PointCloud", "Legacy Shaders/Particles/Additive");
-            material.mainTexture = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Guidance/Stage/Dot.png");
+            material.mainTexture = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
             NoSoftEdge(material);
             return material;
         }
@@ -700,10 +832,10 @@ namespace Guidance.EditorTools
             {
                 for (int x = 0; x < size; x++)
                 {
-                    bool line = x % 16 < 2 || y % 16 < 2;
-                    bool edge = x < 4 || y < 4 || x >= size - 4 || y >= size - 4;
-                    float v = edge ? 1f : line ? 0.7f : 0.08f;
-                    texture.SetPixel(x, y, new Color(Cyan.r * v, Cyan.g * v, Cyan.b * v, 1f));
+                    // ます目1つ分（0.5m）。ふちの線と、うすく塗った中
+                    bool edge = x < 5 || y < 5 || x >= size - 5 || y >= size - 5;
+                    float v = edge ? 1f : 0.22f;
+                    texture.SetPixel(x, y, new Color(v, v, v, 1f));
                 }
             }
 
@@ -711,9 +843,9 @@ namespace Guidance.EditorTools
             Object.DestroyImmediate(texture);
             AssetDatabase.ImportAsset(path);
             var importer = (TextureImporter)AssetImporter.GetAtPath(path);
-            if (importer != null && importer.wrapMode != TextureWrapMode.Clamp)
+            if (importer != null && importer.wrapMode != TextureWrapMode.Repeat)
             {
-                importer.wrapMode = TextureWrapMode.Clamp;
+                importer.wrapMode = TextureWrapMode.Repeat;
                 importer.SaveAndReimport();
             }
 
@@ -732,29 +864,40 @@ namespace Guidance.EditorTools
             Material white = StageBuilder.Lit("VrFurniture", new Color(0.75f, 0.77f, 0.82f), Color.black, 0.4f);
             Material wood = StageBuilder.Lit("VrWood", new Color(0.55f, 0.36f, 0.2f), Color.black, 0.3f);
 
-            void Solid(string part, Vector3 position, Vector3 size, Material material)
+            // 家具ごとにまとめる（空間アンカーの場面で、家具として見つけて箱で囲む単位）
+            Transform Piece(string label)
             {
-                GameObject box = StageBuilder.Box(room, part, position, size, material);
+                var piece = new GameObject(label);
+                piece.transform.SetParent(room, false);
+                piece.AddComponent<Furniture>().Label = label;
+                return piece.transform;
+            }
+
+            void Solid(Transform piece, string part, Vector3 position, Vector3 size, Material material)
+            {
+                GameObject box = StageBuilder.Box(piece, part, position, size, material);
                 box.AddComponent<BoxCollider>().size = size;
             }
 
             // アバターの前、客席から見て左寄りに低い机と箱（客席からアバターが隠れないよう低くする）
             Vector3 desk = new Vector3(AvatarX + 1.0f, 0f, 1.0f);
-            Solid("DeskTop", desk + new Vector3(0f, 0.42f, 0f), new Vector3(0.7f, 0.04f, 0.5f), wood);
+            Transform deskPiece = Piece("机");
+            Solid(deskPiece, "DeskTop", desk + new Vector3(0f, 0.42f, 0f), new Vector3(0.7f, 0.04f, 0.5f), wood);
             foreach (float sx in new[] { -1f, 1f })
             {
                 foreach (float sz in new[] { -1f, 1f })
                 {
-                    Solid("DeskLeg", desk + new Vector3(sx * 0.31f, 0.2f, sz * 0.21f), new Vector3(0.04f, 0.4f, 0.04f), wood);
+                    Solid(deskPiece, "DeskLeg", desk + new Vector3(sx * 0.31f, 0.2f, sz * 0.21f), new Vector3(0.04f, 0.4f, 0.04f), wood);
                 }
             }
 
-            Solid("Box", desk + new Vector3(0.12f, 0.565f, 0f), new Vector3(0.25f, 0.25f, 0.25f), white);
+            Solid(Piece("箱"), "Box", desk + new Vector3(0.12f, 0.565f, 0f), new Vector3(0.25f, 0.25f, 0.25f), white);
             // アバターの前、客席から見て右寄りにいす
             Vector3 chair = new Vector3(AvatarX - 0.9f, 0f, 1.0f);
-            Solid("Seat", chair + new Vector3(0f, 0.42f, 0f), new Vector3(0.4f, 0.05f, 0.4f), white);
-            Solid("SeatBase", chair + new Vector3(0f, 0.2f, 0f), new Vector3(0.26f, 0.4f, 0.26f), white);
-            Solid("Back", chair + new Vector3(0f, 0.68f, -0.18f), new Vector3(0.4f, 0.48f, 0.04f), white);
+            Transform chairPiece = Piece("いす");
+            Solid(chairPiece, "Seat", chair + new Vector3(0f, 0.42f, 0f), new Vector3(0.4f, 0.05f, 0.4f), white);
+            Solid(chairPiece, "SeatBase", chair + new Vector3(0f, 0.2f, 0f), new Vector3(0.26f, 0.4f, 0.26f), white);
+            Solid(chairPiece, "Back", chair + new Vector3(0f, 0.68f, -0.18f), new Vector3(0.4f, 0.48f, 0.04f), white);
             return room.gameObject;
         }
     }

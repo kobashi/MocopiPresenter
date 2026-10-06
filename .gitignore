@@ -9,3 +9,7 @@
 .DS_Store
 /Assets/Guidance/Avatars/RAYNOS/
 /Assets/Guidance/Avatars/RAYNOS.meta
+
+# MR の背景動画（人が写っている・容量が大きいので公開しない。手元とビルドにだけ置く）
+/Assets/StreamingAssets/Presentations/*/*.mp4
+/Assets/StreamingAssets/Presentations/*/*.mp4.meta

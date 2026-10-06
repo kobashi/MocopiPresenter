@@ -22,6 +22,8 @@ namespace Guidance
             public Item[] stand = new Item[0];
             // 全部見せ終わったときに出す一言
             public string note = "";
+            // 回る部分の大きさ（1 が元の大きさ）。大きくすると回る部分を下げ、土台も横に広げる
+            public float standScale = 1f;
         }
 
         [System.Serializable]
@@ -63,6 +65,7 @@ namespace Guidance
         private bool turning;
         private bool finished;
         private float lastHit = -10f;
+        private float drumHeight = float.NaN;
 
         /// <summary>
         /// いま正面を向いている面の番号（0〜）
@@ -92,7 +95,32 @@ namespace Guidance
             // 見せた項目はスクリーンの本文に書き足し、締めの一言は全部見せ終わってから出す
             this.Body = deck.Body;
             this.Note = deck.Note;
+            this.Resize(settings.standScale > 0f ? settings.standScale : 1f);
             this.Set(settings.stand, settings.note);
+        }
+
+        /// <summary>
+        /// 回る部分を scale 倍にする（面・アイコン・名前もまとめて）。土台は高さを変えずに横だけ広げる
+        /// </summary>
+        public void Resize(float scale)
+        {
+            if (float.IsNaN(this.drumHeight))
+            {
+                this.drumHeight = this.Drum.transform.localPosition.y;
+            }
+
+            // 大きくするほど回る部分を下げ、円卓のように腰の高さで回す（後ろのスクリーンの文字も隠れにくい）
+            Vector3 position = this.Drum.transform.localPosition;
+            position.y = this.drumHeight - (scale - 1f) * 0.45f;
+            this.Drum.transform.localPosition = position;
+            this.Drum.transform.localScale = Vector3.one * scale;
+            foreach (Transform part in this.transform)
+            {
+                if (part.name.StartsWith("Base"))
+                {
+                    part.localScale = new Vector3(scale, 1f, scale);
+                }
+            }
         }
 
         public void Set(Item[] newItems, string newNote)

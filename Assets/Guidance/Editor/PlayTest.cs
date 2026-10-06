@@ -295,24 +295,34 @@ namespace Guidance.EditorTools
                 avatar = animator.transform;
             });
 
+            // 場面1：縦書きの積み木が1つずつ積み重なる
+            At(0.7f, () =>
+            {
+                deck.Show(0);
+                Find<TitleBlocks>().Set(new[] { "VR", "体験会" }, null, false, 0f, true);
+            });
+            At(3.4f, () => { Console.WriteLine("PLAYTEST blocks count=" + Find<TitleBlocks>().BlockCount); Shot("vr-1-blocks"); });
+
             // 場面3：頭を回すとゴーグルの景色が変わる
-            At(1.0f, () => deck.Show(2));
-            At(2.0f, () => { Shot("vr-3-headset-front"); Eyes("vr-3"); });
-            At(2.1f, () => Turn(70f));
-            At(3.5f, () => { Shot("vr-3-headset-turned"); Eyes("vr-3-turned"); Console.WriteLine("PLAYTEST headset turn=" + Find<HeadsetView>().HeadTurn.eulerAngles); });
-            At(3.6f, () => Turn(0f));
+            At(3.5f, () => deck.Show(1));
+            At(3.95f, () => Shot("vr-2-stand"));
+            At(4f, () => deck.Show(2));
+            At(5f, () => { Shot("vr-3-headset-front"); Eyes("vr-3"); });
+            At(5.1f, () => Turn(70f));
+            At(6.5f, () => { Shot("vr-3-headset-turned"); Eyes("vr-3-turned"); Console.WriteLine("PLAYTEST headset turn=" + Find<HeadsetView>().HeadTurn.eulerAngles); });
+            At(6.6f, () => Turn(0f));
 
             // 場面4：カメラを増やすと座標の分かる点が増える
-            At(4.0f, () => deck.Show(3));
+            At(7f, () => deck.Show(3));
             for (int n = 1; n <= 4; n++)
             {
                 int count = n;
-                At(4.5f + n * 0.6f, () =>
+                At(7.5f + n * 0.6f, () =>
                 {
                     OutsideInTracking tracking = Find<OutsideInTracking>();
                     tracking.SetCameras(count);
                 });
-                At(4.9f + n * 0.6f, () =>
+                At(7.9f + n * 0.6f, () =>
                 {
                     OutsideInTracking tracking = Find<OutsideInTracking>();
                     Console.WriteLine("PLAYTEST tracking cameras=" + tracking.ActiveCameras + " located=" + tracking.Located + "/" + tracking.MarkerCount + " hidden=" + tracking.Hidden);
@@ -321,8 +331,8 @@ namespace Guidance.EditorTools
             }
 
             // 場面5：LiDAR で測った点がたまり、手の見え方が変わる
-            At(8.0f, () => deck.Show(4));
-            At(11.0f, () =>
+            At(11f, () => deck.Show(4));
+            At(14f, () =>
             {
                 InsideOutScan scan = Find<InsideOutScan>();
                 Console.WriteLine("PLAYTEST insideout particles=" + scan.Points.particleCount + " playing=" + scan.Points.isPlaying + " measured=" + scan.Measured + " left=" + scan.LeftTracked + " right=" + scan.RightTracked);
@@ -337,25 +347,29 @@ namespace Guidance.EditorTools
                 Console.WriteLine("PLAYTEST renderer enabled=" + r.enabled + " bounds=" + r.bounds + " mat=" + r.sharedMaterial.name + "/" + r.sharedMaterial.shader.name + " tex=" + r.sharedMaterial.mainTexture);
                 Shot("vr-5-scan");
             });
-            At(11.1f, () => Turn(-60f));
-            At(13.0f, () => { Console.WriteLine("PLAYTEST insideout measured=" + Find<InsideOutScan>().Measured); Shot("vr-5-scan-turned"); });
-            At(13.1f, () => Turn(0f));
+            At(14.1f, () => Turn(-60f));
+            At(16f, () => { Console.WriteLine("PLAYTEST insideout measured=" + Find<InsideOutScan>().Measured); Shot("vr-5-scan-turned"); });
+            At(16.1f, () => Turn(0f));
 
             // 場面6：両手を上げると VR に切り替わる
-            At(13.5f, () => deck.Show(5));
-            At(14.5f, () => { Console.WriteLine("PLAYTEST vrmr vr=" + Find<VrMrSwitch>().IsVr); Shot("vr-6-mr"); Save(Find<VrMrSwitch>().RealTexture, "vr-6-mr-view"); });
-            At(14.6f, () => HandsUp(true));
-            At(15.0f, () => HandsUp(true));
-            At(16.2f, () => { Console.WriteLine("PLAYTEST vrmr vr=" + Find<VrMrSwitch>().IsVr); Shot("vr-6-vr"); Save(Find<VrMrSwitch>().VirtualTexture, "vr-6-vr-view"); });
+            At(16.5f, () => deck.Show(5));
+            At(17.5f, () => { Console.WriteLine("PLAYTEST vrmr vr=" + Find<VrMrSwitch>().IsVr); Shot("vr-6-mr"); Save(Find<VrMrSwitch>().RealTexture, "vr-6-mr-view"); });
+            At(18.5f, () => HandsUp(true));
+            At(18.6f, () => HandsUp(true));
+            At(18.0f, () => Turn(90f));
+            At(18.3f, () => Save(Find<VrMrSwitch>().RealTexture, "vr-6-mr-view-turned"));
+            At(18.4f, () => Turn(0f));
+            At(20.2f, () => { Console.WriteLine("PLAYTEST vrmr vr=" + Find<VrMrSwitch>().IsVr); Shot("vr-6-vr"); Save(Find<VrMrSwitch>().VirtualTexture, "vr-6-vr-view"); });
 
             // 場面7：面を見つけて物を置く
-            At(16.5f, () => { animator.Rebind(); deck.Show(6); });
-            At(19.5f, () => Turn(180f));
-            At(22.5f, () =>
+            At(20.5f, () => { animator.Rebind(); deck.Show(6); });
+            At(25.4f, () => { Console.WriteLine("PLAYTEST anchors front furniture=" + Find<SpatialAnchors>().FurnitureFound + " floors=" + Find<SpatialAnchors>().FloorsFound); Shot("vr-7-anchors-front"); });
+            At(25.5f, () => Turn(180f));
+            At(28.5f, () =>
             {
                 SpatialAnchors anchors = Find<SpatialAnchors>();
                 anchors.PlaceAtGaze();
-                Console.WriteLine("PLAYTEST anchors points=" + anchors.PointCount + " floors=" + anchors.FloorsFound + " walls=" + anchors.WallsFound + " placed=" + anchors.PlacedCount + " particles=" + anchors.FeaturePoints.particleCount);
+                Console.WriteLine("PLAYTEST anchors furniture=" + anchors.FurnitureFound + " points=" + anchors.PointCount + " floors=" + anchors.FloorsFound + " walls=" + anchors.WallsFound + " placed=" + anchors.PlacedCount + " particles=" + anchors.FeaturePoints.particleCount);
                 foreach (Transform child in anchors.transform)
                 {
                     if (child.gameObject.activeSelf)
@@ -364,15 +378,15 @@ namespace Guidance.EditorTools
                     }
                 }
             });
-            At(22.6f, () => Shot("vr-7-anchors-back"));
-            At(23.0f, () => Turn(0f));
-            At(24.0f, () => Shot("vr-7-anchors"));
+            At(28.6f, () => Shot("vr-7-anchors-back"));
+            At(29f, () => Turn(0f));
+            At(30f, () => Shot("vr-7-anchors"));
 
             // 場面8：アイコンが並ぶ
-            At(24.5f, () => deck.Show(7));
-            At(26.0f, () => Shot("vr-8-apps"));
-            At(26.1f, () => Find<AppShowcase>().Bounce(1));
-            At(26.4f, () => { Console.WriteLine("PLAYTEST apps count=" + Find<AppShowcase>().Count + " bounced=" + Find<AppShowcase>().Bounced); Shot("vr-8-apps-bounce"); });
+            At(30.5f, () => deck.Show(7));
+            At(32f, () => Shot("vr-8-apps"));
+            At(32.1f, () => Find<AppShowcase>().Bounce(1));
+            At(32.4f, () => { Console.WriteLine("PLAYTEST apps count=" + Find<AppShowcase>().Count + " bounced=" + Find<AppShowcase>().Bounced); Shot("vr-8-apps-bounce"); });
             Run(0);
         }
 

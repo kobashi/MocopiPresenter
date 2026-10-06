@@ -27,7 +27,17 @@ namespace Guidance
             public float cameraWidth = 100f;
             public float cameraHeight = 80f;
             // LiDAR の線の本数（1回に振る扇の線の数）と、1秒に何回振るか
-            public int rays = 24;
+            public int rays = 40;
+            // LiDAR の扇の広さ（左右の角度）と、上下に振る範囲（下向きが正）
+            public float scanWidth = 170f;
+            public float scanUp = -10f;
+            public float scanDown = 70f;
+            // 1秒に残す点の数（多すぎると古い点がすぐ消える）
+            public float pointsPerSecond = 900f;
+            // 点が残る秒数
+            public float pointLife = 40f;
+            // 光の線の太さ（m）
+            public float beamWidth = 0.025f;
             public float sweepsPerSecond = 3f;
             // LiDAR が届く距離（m）
             public float range = 4f;
@@ -71,6 +81,7 @@ namespace Guidance
         private string lastStatus = "";
         private float keyYaw;
         private float sweep;
+        private float pending;
 
         /// <summary>
         /// これまでに測った点の数
@@ -156,7 +167,7 @@ namespace Guidance
                 beam.transform.SetParent(this.transform, false);
                 beam.sharedMaterial = this.BeamMaterial;
                 beam.positionCount = 2;
-                beam.widthMultiplier = 0.006f;
+                beam.widthMultiplier = this.settings.beamWidth;
                 beam.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
                 beam.receiveShadows = false;
                 this.beams.Add(beam);
@@ -258,8 +269,11 @@ namespace Guidance
         {
             this.sweep += Time.deltaTime * this.settings.sweepsPerSecond;
             // 扇は横に広がり、上下に往復する（下向き：足元の床や机を測る）
-            float tilt = Mathf.Lerp(10f, 60f, Mathf.PingPong(this.sweep, 1f));
-            float width = this.settings.cameraWidth;
+            float tilt = Mathf.Lerp(this.settings.scanUp, this.settings.scanDown, Mathf.PingPong(this.sweep, 1f));
+            float width = this.settings.scanWidth;
+            this.pending += Time.deltaTime * this.settings.pointsPerSecond;
+            // 1本あたりに点を残す割合（線の数より残す点が少ないときは、間引いて残す）
+            float keep = Mathf.Clamp01(this.pending / Mathf.Max(1, this.beams.Count));
             for (int i = 0; i < this.beams.Count; i++)
             {
                 float yaw = Mathf.Lerp(-width * 0.5f, width * 0.5f, this.beams.Count > 1 ? i / (this.beams.Count - 1f) : 0.5f);
@@ -275,16 +289,23 @@ namespace Guidance
                     // 近い所は水色、遠い所は桃色
                     float near = Mathf.Clamp01(hit.distance / this.settings.range);
                     Color color = Color.Lerp(new Color(0.1f, 1f, 0.9f), new Color(1f, 0.3f, 0.8f), near);
-                    beam.startColor = new Color(color.r, color.g, color.b, 0.05f);
-                    beam.endColor = new Color(color.r, color.g, color.b, 0.6f);
-                    this.Points.Emit(new ParticleSystem.EmitParams { position = hit.point + hit.normal * 0.01f, startColor = color, applyShapeToPosition = false }, 1);
-                    this.Measured++;
+                    beam.startColor = new Color(color.r, color.g, color.b, 0.15f);
+                    beam.endColor = new Color(color.r, color.g, color.b, 1f);
+                    if (Random.value < keep)
+                    {
+                        this.pending -= 1f;
+                        this.Points.Emit(new ParticleSystem.EmitParams { position = hit.point + hit.normal * 0.015f, startColor = color, startLifetime = this.settings.pointLife, applyShapeToPosition = false }, 1);
+                        this.Measured++;
+                    }
                 }
                 else
                 {
                     beam.enabled = false;
                 }
             }
+
+            // 当たらなかった分がたまりすぎないようにする
+            this.pending = Mathf.Min(this.pending, this.beams.Count * 2f);
         }
 
         private bool Cast(Vector3 from, Vector3 direction, out RaycastHit nearest)

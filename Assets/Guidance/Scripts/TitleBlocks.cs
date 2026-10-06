@@ -26,6 +26,8 @@ namespace Guidance
             public float jumpHeight;
             // 空から降らせ続ける言葉
             public string[] rain = new string[0];
+            // true なら縦書きに積む（1行を1本の柱にして、上から下へ文字を並べる。1行目が客席から見て右の柱）
+            public bool blocksVertical;
         }
 
         public GameObject Template;
@@ -58,6 +60,7 @@ namespace Guidance
         private string[] rows = new string[0];
         private string[] rain = new string[0];
         private bool onJump;
+        private bool vertical;
         private float standing = float.NaN;
         private float lastJump = -10f;
 
@@ -71,6 +74,7 @@ namespace Guidance
         protected override void OnEnter(string json, SlideDeck deck)
         {
             Settings settings = Read<Settings>(json);
+            this.vertical = settings.blocksVertical;
             this.Set(settings.blocks, settings.rain, settings.blocksOnJump, settings.jumpHeight, Application.isPlaying);
         }
 
@@ -80,6 +84,7 @@ namespace Guidance
             this.rows = new string[0];
             this.rain = new string[0];
             this.onJump = false;
+            this.vertical = false;
         }
 
         private void Update()
@@ -242,6 +247,12 @@ namespace Guidance
 
         private void Build(bool animate)
         {
+            if (this.vertical)
+            {
+                this.BuildVertical(animate);
+                return;
+            }
+
             float pitch = this.Size + 0.006f;
             int count = 0;
 
@@ -274,6 +285,34 @@ namespace Guidance
             if (animate && this.rain.Length > 0)
             {
                 this.StartCoroutine(this.Rain());
+            }
+        }
+
+        /// <summary>
+        /// 縦書きに積む。柱ごとに、下の文字から1つずつ落ちてきて、前に落ちた積み木の上に重なっていく。
+        /// </summary>
+        private void BuildVertical(bool animate)
+        {
+            float pitch = this.Size + 0.006f;
+            int count = 0;
+            for (int column = 0; column < this.rows.Length; column++)
+            {
+                string letters = this.rows[column].Replace(" ", "");
+                // 1行目が客席から見て右（-X）。柱の間は少し空ける
+                float x = this.Center.x + ((this.rows.Length - 1) * 0.5f - column) * -pitch * 1.4f;
+                for (int i = letters.Length - 1; i >= 0; i--)
+                {
+                    float y = this.Center.y + (letters.Length - 1 - i + 0.5f) * pitch;
+                    var home = new Vector3(x, y, this.Center.z);
+                    LetterBlock block = this.NewBlock(letters[i].ToString(), home, Quaternion.identity, Vector3.one * this.Size, count, true);
+                    if (animate)
+                    {
+                        // 真上からまっすぐ落とし、着地してから次を落とす
+                        this.StartCoroutine(this.Drop(block, home, count * 0.32f, false));
+                    }
+
+                    count++;
+                }
             }
         }
 
@@ -316,7 +355,7 @@ namespace Guidance
         /// <summary>
         /// 空から落として所定の位置に着地させる。着地するまでは物理を切っておき、きれいに積み上がるようにする。
         /// </summary>
-        private IEnumerator Drop(LetterBlock block, Vector3 home, float delay)
+        private IEnumerator Drop(LetterBlock block, Vector3 home, float delay, bool tumble = true)
         {
             block.Body.isKinematic = true;
             block.gameObject.SetActive(false);
@@ -324,7 +363,7 @@ namespace Guidance
 
             block.gameObject.SetActive(true);
             Vector3 start = home + Vector3.up * 5f;
-            Quaternion spin = Random.rotation;
+            Quaternion spin = tumble ? Random.rotation : Quaternion.identity;
             const float duration = 0.45f;
             for (float t = 0f; t < duration; t += Time.deltaTime)
             {

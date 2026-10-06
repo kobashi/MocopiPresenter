@@ -39,16 +39,16 @@ mocopi（Sony のモバイルモーションキャプチャー）で動く 3D �
 
 | 仕掛け | 内容 | 場面に書く設定 |
 |---|---|---|
-| `blocks` | 文字の積み木 | `blocks`（積む文字の行）、`blocksOnJump`、`jumpHeight`、`rain`（降らせる言葉） |
+| `blocks` | 文字の積み木 | `blocks`（積む文字の行）、`blocksOnJump`、`blocksVertical`（縦書きに1つずつ積む）、`jumpHeight`、`rain`（降らせる言葉） |
 | `marble` | マーブルマシン | なし |
 | `stand` | 回転式スタンド | `stand`（`icon` と `label` の並び）、`note` |
 | `agents` | コーディングエージェント | `agents`（数）、`troubles`（トラブルの名前）、`crackSpeed` |
 | `qr` | QR コードの案内 | `qr`（`title`、`caption`、`heading`、`steps`、`image`） |
 | `headset` | ヘッドトラッキング：頭の向き → ゲームのカメラ → ゴーグルの左右の画面（立体視） | `headset`（`eyeGap`、`follow`、`keyTurn`） |
 | `tracking` | アウトサイドイン：まわりのカメラが体のマーカーを捉え、座標を出す | `tracking`（`cameras`：最初の台数、`coordinates`） |
-| `insideout` | インサイドアウト：ゴーグルのカメラと LiDAR で空間を測り、手を追う | `scan`（`cameraWidth`、`cameraHeight`、`rays`、`sweepsPerSecond`、`range`、`keyTurn`） |
-| `vrmr` | VR と MR の切り替え（ゴーグルの中の景色を画面に出す） | `mixed`（`start`、`handsUp`、`hold`、`wipe`） |
-| `anchors` | 空間アンカー：特徴点 → 床や壁を見つける → 物を置いて固定 | `anchors`（`pointsPerSecond`、`pointsForPlane`、`view`、`range`、`handUp`、`hold`、`keyTurn`） |
+| `insideout` | インサイドアウト：ゴーグルのカメラと LiDAR で空間を測り、手を追う | `scan`（`cameraWidth`、`cameraHeight`、`rays`、`scanWidth`、`scanUp`、`scanDown`、`sweepsPerSecond`、`pointsPerSecond`、`pointLife`、`beamWidth`、`range`、`keyTurn`） |
+| `vrmr` | VR と MR の切り替え（ゴーグルの中の景色を画面に出す） | `mixed`（`start`、`handsUp`、`hold`、`wipe`、`video`：MR の現実の景色にする動画。プレゼンのフォルダに置く。空なら計算で作った教室、`video360`：360度動画なら true（頭の向きで見回せる）、`videoYaw`：360度動画の正面の向き） |
+| `anchors` | 空間アンカー：特徴点 → 床や壁を見つける → 物を置いて固定 | `anchors`（`pointsPerSecond`、`pointsForPlane`、`pointsForFurniture`、`view`、`range`、`handUp`、`hold`、`keyTurn`） |
 | `apps` | VR アプリのアイコンを並べる | `apps`（`icon`：coaster / saber / pithouse / zombie、`label`） |
 
 新しい仕掛けの作り方は [CLAUDE.md](CLAUDE.md) の「仕掛けを足す」を参照してください。

@@ -80,21 +80,22 @@ Assets/
 
 | Id | クラス | 場面に書く項目 | キー |
 |---|---|---|---|
-| `blocks` | TitleBlocks | `blocks`（積む文字の行）、`blocksOnJump`、`jumpHeight`、`rain`（降らせる言葉） | J / B |
+| `blocks` | TitleBlocks | `blocks`（積む文字の行）、`blocksOnJump`、`blocksVertical`、`jumpHeight`、`rain`（降らせる言葉） | J / B |
 | `marble` | MarbleMachine | なし | M |
 | `stand` | BookStand | `stand`（`icon` と `label` の配列）、`note` | T / Shift+T |
 | `agents` | AgentScene | `agents`（数）、`troubles`、`crackSpeed` | W |
 | `qr` | QrGuide | `qr`（`title` `caption` `heading` `steps` `image`） | Q |
 | `headset` | HeadsetView | `headset`（`eyeGap` `follow` `keyTurn`） | C / A / D |
 | `tracking` | OutsideInTracking | `tracking`（`cameras` `coordinates`） | G |
-| `insideout` | InsideOutScan | `scan`（`cameraWidth` `cameraHeight` `rays` `sweepsPerSecond` `range` `keyTurn`） | C / A / D / L |
-| `vrmr` | VrMrSwitch | `mixed`（`start` `handsUp` `hold` `wipe`） | X / C |
-| `anchors` | SpatialAnchors | `anchors`（`pointsPerSecond` `pointsForPlane` `view` `range` `handUp` `hold` `keyTurn`） | K / L / C / A / D |
+| `insideout` | InsideOutScan | `scan`（`cameraWidth` `cameraHeight` `rays` `scanWidth` `scanUp` `scanDown` `sweepsPerSecond` `pointsPerSecond` `pointLife` `beamWidth` `range` `keyTurn`） | C / A / D / L |
+| `vrmr` | VrMrSwitch | `mixed`（`start` `handsUp` `hold` `wipe` `video` `video360` `videoYaw`） | X / C |
+| `anchors` | SpatialAnchors | `anchors`（`pointsPerSecond` `pointsForPlane` `pointsForFurniture` `view` `range` `handUp` `hold` `keyTurn`） | K / L / C / A / D |
 | `apps` | AppShowcase | `apps`（`icon` と `label` の配列） | Y |
 
 - VR 体験会の仕掛け（headset〜apps）の組み立ては `Editor/VrGimmickBuilder.cs` にまとめてある。頭の向きは `HeadPose`（場面に入ったときの向きが正面）で読む。
 - 原寸の「ゲームの世界」は舞台の下（y = -300 / -600。霧で見えない）に置き、そこを写したカメラの映像をゴーグルの画面に出している。
-- `vrmr` の仮想の物は層 31 に置き、場面に出ている間だけ舞台のカメラ（Camera.main）から外す。
+- `vrmr` の仮想の物は層 31 に置き、場面に出ている間だけ舞台のカメラ（Camera.main）から外す。MR の景色は、`mixed.video` の動画（360度なら Skybox/Panoramic の背景に貼って頭の向きで見回す。平らな動画ならカメラの奥に流す）か、舞台の下（y = -900）の教室を写したものに、層 31 だけを写すカメラを重ねて作る。
+- 空間アンカーの家具は `Furniture`（名前付きの目印）の付いたまとまりで、子の当たり判定全体を箱で囲む。
 - 床や壁に貼り付ける光の粒・格子は、ソフトパーティクルで消えないよう素材の `_InvFade` を大きくしてある。
 
 ### 仕掛けを足す
@@ -152,4 +153,5 @@ Unity -batchmode -quit -projectPath . -buildTarget Win64 -executeMethod Guidance
   2. シーンを作り直す（サンプルアバターになる）。
   3. `git update-index --no-skip-worktree Assets/Guidance/Scenes/Guidance.unity` してからコミットする。
   4. RAYNOS を戻してシーンを作り直し、`--skip-worktree` を設定し直す。
+- MR の背景動画（`StreamingAssets/Presentations/*/*.mp4`）は人が写っているので Git の管理対象外。手元とビルドにだけ置き、リリース用の zip には入れない。
 - リリース用の zip は、RAYNOS を退避した状態でビルドし、`LICENSE`、`THIRD_PARTY_NOTICES.md`、`Assets/MocopiReceiver/LICENSE`（`LICENSE-mocopi-receiver-plugin.txt` として）を同梱する。
